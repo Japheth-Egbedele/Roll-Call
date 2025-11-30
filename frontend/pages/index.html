@@ -9,84 +9,138 @@
 </head>
 <body class="light">
 
+<!-- Theme Toggle -->
 <i id="themeToggle" class="theme-toggle bx bx-sun"></i>
 
-        <section id="landing" class="page active">
-    <a href="enroll.html" class="button-link" id="enroll-link">Enroll</a>
+<!-- ================================= -->
+<!-- 1. Landing Page -->
+<!-- ================================= -->
+<section id="landing" class="page active">
     <div class="page-content">
         <h1>Welcome to Roll Call</h1>
-        <p>Start a session.</p>
+        <p>Start a session or view history.</p>
         <button id="startBtn">Start New Session</button> 
+        <button id="historyBtn">View Past Sessions</button>
+        <a href="enroll.html" class="button-link" id="enroll-link">Enroll</a>
     </div>
 </section>
 
-        <section id="scan" class="page">
-        <div class="page-content">
-            <h2>Lecturer Verification</h2>
-            <p class="feedback" id="scanFeedback">Please look at the camera for verification.</p>
-            <video id="scanVideo" autoplay muted></video>
-            <canvas id="scanCanvas" style="display: none;"></canvas>
-            
-            <div id="lecturerStatus" style="min-height: 20px; margin-top: 15px;">
-            </div>
-            
-            <button class="backBtn" data-target="landing">Back to Home</button>
-        </div>
-    </section>
+<!-- ================================= -->
+<!-- 2. Lecturer Verification -->
+<!-- ================================= -->
+<section id="scan" class="page">
+    <div class="page-content">
+        <h2>Lecturer Verification</h2>
+        <p class="feedback" id="scanFeedback">Please look at the camera for verification.</p>
+        <video id="scanVideo" autoplay muted></video>
+        <canvas id="scanCanvas" style="display: none;"></canvas>
 
-        <section id="attendance" class="page full-width-layout">
-        <div class="attendance-main">
-            <div class="camera-panel">
-                <h2>Live Student Scan</h2>
-                <div id="sessionInfoDisplay">
-    <div class="info-item">
-        <i class='bx bx-book-content'></i>
-        <div class="info-text">
-            <h4>Session</h4>
-            <span id="sessionCourse">Backend/API</span>
-        </div>
-    </div>
-    <div class="info-item">
-        <i class='bx bx-user-circle'></i>
-        <div class="info-text">
-            <h4>Lecturer</h4>
-            <span id="sessionLecturer">Dr. Jane Doe</span>
-        </div>
-    </div>
-</div>
-                <video id="studentScanVideo" autoplay muted></video>
-                <p class="feedback" id="scanStatus">Scan ready. Waiting for student...</p>
-<button id="endSessionBtn">End Session & Save Log</button>            </div>
-            
-            <div class="log-sidebar">
-                <h3>Attendance Log (<span id="attendeeCount">0</span>)</h3>
-                <ul id="attendanceList">
-                    </ul>
-            </div>
-        </div>
-    </section>
+        <div id="lecturerStatus" style="min-height: 20px; margin-top: 15px;"></div>
 
-        <section id="endScan" class="page">
-    <div class="page-content">
-        <h2>End Session Verification</h2>
-        <p class="feedback" id="endScanFeedback">Please look at the camera to confirm session closure.</p>
-        <video id="endScanVideo" autoplay muted></video>
-            <canvas id="endScanCanvas" style="display: none;"></canvas>
-        
-        <div id="endScanStatus" style="min-height: 20px; margin-top: 15px;">
-            </div>
-        
-        <button class="backBtn" data-target="attendance">Cancel</button>
-    </div>
+        <button class="backBtn" data-target="landing">Back to Home</button>
+    </div>
 </section>
 
-        <section id="overview" class="page">
-        <div class="page-content">
-            <h2>Session Overview</h2>
-            <p>Full view of all sessions and attendance records will be displayed here.</p>
-            <button class="backBtn" data-target="landing">Back to Home</button>
-        </div>
-    </section>
-    <script src="../js/page.js"></script>
-    </body>
+<!-- ================================= -->
+<!-- 3. New Session Creation -->
+<!-- ================================= -->
+<section id="newSession" class="page">
+    <div class="page-content">
+        <h2>Create New Session</h2>
+
+        <label>Course Title</label>
+        <input type="text" id="courseTitle" placeholder="e.g. Data Structures">
+
+        <label>Course Code</label>
+        <input type="text" id="courseCode" placeholder="e.g. CSC201">
+
+        <button id="createSessionBtn">Create Session</button>
+        <button class="backBtn" data-target="landing">Cancel</button>
+    </div>
+</section>
+
+<!-- ================================= -->
+<!-- 4. Attendance Page -->
+<!-- ================================= -->
+<section id="attendance" class="page full-width-layout">
+    <div class="attendance-main">
+        <div class="camera-panel">
+            <h2>Live Student Scan</h2>
+
+            <div id="sessionInfoDisplay">
+                <div class="info-item">
+                    <i class='bx bx-book-content'></i>
+                    <div class="info-text">
+                        <h4>Session</h4>
+                        <span id="sessionCourse">--</span>
+                    </div>
+                </div>
+                <div class="info-item">
+                    <i class='bx bx-user-circle'></i>
+                    <div class="info-text">
+                        <h4>Lecturer</h4>
+                        <span id="sessionLecturer">--</span>
+                    </div>
+                </div>
+            </div>
+
+            <video id="studentScanVideo" autoplay muted></video>
+            <p class="feedback" id="scanStatus">Scan ready. Waiting for student...</p>
+
+            <button id="endSessionBtn">End Session & Save Log</button>             
+        </div>
+
+        <div class="log-sidebar">
+            <h3>Attendance Log (<span id="attendeeCount">0</span>)</h3>
+            <ul id="attendanceList"></ul>
+        </div>
+    </div>
+</section>
+
+<!-- ================================= -->
+<!-- 5. End Session Verification -->
+<!-- ================================= -->
+<section id="endScan" class="page">
+    <div class="page-content">
+        <h2>End Session Verification</h2>
+        <p class="feedback" id="endScanFeedback">Please look at the camera to confirm session closure.</p>
+        <video id="endScanVideo" autoplay muted></video>
+        <canvas id="endScanCanvas" style="display: none;"></canvas>
+
+        <div id="endScanStatus" style="min-height: 20px; margin-top: 15px;"></div>
+
+        <button class="backBtn" data-target="attendance">Cancel</button>
+    </div>
+</section>
+
+<!-- ================================= -->
+<!-- 6. History Page -->
+<!-- ================================= -->
+<section id="history" class="page">
+    <div class="page-content">
+        <h2>Past Sessions</h2>
+        <div id="historyList">
+            <p>Loading...</p>
+        </div>
+        <button class="backBtn" data-target="landing">Back</button>
+    </div>
+</section>
+
+<!-- ================================= -->
+<!-- 7. History Details Page -->
+<!-- ================================= -->
+<section id="historyDetails" class="page">
+    <div class="page-content">
+        <h2>Session Details</h2>
+        <div id="sessionDetailsInfo"></div>
+
+        <h3>Attendance</h3>
+        <ul id="historyAttendanceList"></ul>
+
+        <button class="backBtn" data-target="history">Back</button>
+    </div>
+</section>
+
+<script src="../js/page.js"></script>
+</body>
 </html>

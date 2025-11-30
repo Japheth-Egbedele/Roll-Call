@@ -7,9 +7,8 @@
     <title>Roll Call Demo - Unified Enrollment</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="../style/style.css">
+    <link rel="stylesheet" href="style.css">
     <style>
-        /* === Minimal Layout Styles for Enrollment Page (Shared) === */
         body {
             margin: 0;
             font-family: 'Poppins', sans-serif;
@@ -19,6 +18,7 @@
             justify-content: center;
             transition: background 0.5s, color 0.5s;
         }
+
         .card {
             padding: 40px;
             border-radius: 20px;
@@ -28,7 +28,10 @@
             position: relative;
             transition: background 0.5s, box-shadow 0.5s;
         }
-        h2 { margin-bottom: 20px; }
+
+        h2 {
+            margin-bottom: 20px;
+        }
 
         input[type="text"] {
             width: 100%;
@@ -39,18 +42,17 @@
             font-size: 14px;
             transition: all 0.3s ease;
         }
+
         input[type="text"]:focus {
             outline: none;
-            /* Placeholder focus color: dynamically set by JS */
-            border-color: var(--focus-color, #4CAF50); 
+            border-color: var(--focus-color, #4CAF50);
         }
-        
+
         button {
             width: 100%;
             padding: 12px;
             margin-top: 15px;
-            /* Placeholder gradient: dynamically set by JS */
-            background: var(--button-bg, linear-gradient(45deg, #4CAF50, #abc2b2)); 
+            background: var(--button-bg, linear-gradient(45deg, #4CAF50, #abc2b2));
             border: none;
             border-radius: 10px;
             color: #fff;
@@ -58,13 +60,16 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-        button:hover { transform: scale(1.05); }
+
+        button:hover {
+            transform: scale(1.05);
+        }
 
         #backToHomeBtn {
             margin-top: 10px;
             background: none;
             border: 1px solid #ccc;
-            color: inherit; 
+            color: inherit;
         }
 
         .message {
@@ -72,25 +77,27 @@
             font-size: 14px;
             min-height: 20px;
         }
+
         video {
             border-radius: 10px;
             margin-top: 10px;
             width: 100%;
         }
+
         .theme-toggle {
             position: absolute;
             top: 20px;
             right: 20px;
             font-size: 28px;
-            color: #333; 
+            color: #333;
             cursor: pointer;
             z-index: 100;
         }
+
         .dark .theme-toggle {
-            color: #f0f0f0; 
+            color: #f0f0f0;
         }
 
-        /* === NEW: Role Selector Styles === */
         .role-selector {
             display: flex;
             justify-content: center;
@@ -100,6 +107,7 @@
             padding: 5px;
             box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.1);
         }
+
         .role-selector label {
             flex-grow: 1;
             padding: 10px;
@@ -109,32 +117,35 @@
             transition: background 0.3s, color 0.3s;
             border-radius: 8px;
         }
+
         .role-selector input[type="radio"] {
             display: none;
         }
-        .role-selector input[type="radio"]:checked + label {
+
+        .role-selector input[type="radio"]:checked+label {
             background: #fff;
             color: #333;
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
         }
+
         .dark .role-selector {
             background: #444;
         }
-        .dark .role-selector input[type="radio"]:checked + label {
+
+        .dark .role-selector input[type="radio"]:checked+label {
             background: #555;
             color: #fff;
         }
-        
     </style>
 </head>
 
 <body class="light">
-    
+
     <i id="themeToggle" class="theme-toggle bx bx-sun"></i>
 
     <div class="card">
         <h2>Unified Enrollment</h2>
-        
+
         <div class="role-selector">
             <input type="radio" id="roleStudent" name="role" value="student" checked>
             <label for="roleStudent"><i class='bx bxs-user-detail'></i> Student</label>
@@ -142,40 +153,33 @@
             <input type="radio" id="roleLecturer" name="role" value="lecturer">
             <label for="roleLecturer"><i class='bx bxs-briefcase'></i> Lecturer</label>
         </div>
-        
+
         <input type="text" id="name" placeholder="Full Name" required>
 
         <input type="text" id="matric_no_input" placeholder="Matric Number" required class="id-input">
         <input type="text" id="staff_id_input" placeholder="Staff ID / Employee No." required class="id-input" style="display: none;">
-        
-        <video id="video" autoplay playsinline></video>
+
+        <video id="enrollVideo" autoplay playsinline></video>
         <button id="captureBtn">Capture & Enroll Student</button>
         <div class="message" id="message"></div>
-        <button id="backToHomeBtn" onclick="window.location.href='index.html'">Back to Home</button> 
+        <button id="backToHomeBtn" onclick="window.location.href='index.html'">Back to Home</button>
     </div>
 
     <script>
-        const video = document.getElementById('video');
+        const video = document.getElementById('enrollVideo');
         const captureBtn = document.getElementById('captureBtn');
         const messageEl = document.getElementById('message');
         const roleSelector = document.querySelectorAll('input[name="role"]');
         const matricInput = document.getElementById('matric_no_input');
         const staffInput = document.getElementById('staff_id_input');
-        const card = document.querySelector('.card');
-
-
-        // ===========================
-        // === DYNAMIC UI LOGIC ===
-        // ===========================
 
         const API_BASE = "http://localhost:8000";
-        let currentRole = 'student'; // Default role
+        let currentRole = 'student';
 
         function updateRole(role) {
             currentRole = role;
-            messageEl.textContent = ''; // Clear status message
+            messageEl.textContent = '';
 
-            // 1. Toggle visibility and required status of ID inputs
             if (role === 'student') {
                 matricInput.style.display = 'block';
                 staffInput.style.display = 'none';
@@ -183,7 +187,6 @@
                 staffInput.required = false;
 
                 captureBtn.textContent = 'Capture & Enroll Student';
-                // Student Theme (Green)
                 document.documentElement.style.setProperty('--focus-color', '#4CAF50');
                 document.documentElement.style.setProperty('--button-bg', 'linear-gradient(45deg, #4CAF50, #abc2b2)');
             } else {
@@ -193,40 +196,30 @@
                 matricInput.required = false;
 
                 captureBtn.textContent = 'Capture & Enroll Lecturer';
-                // Lecturer Theme (Blue)
                 document.documentElement.style.setProperty('--focus-color', '#007BFF');
                 document.documentElement.style.setProperty('--button-bg', 'linear-gradient(45deg, #007BFF, #6c88a8)');
             }
         }
 
-        // Event listener for role change
         roleSelector.forEach(radio => {
             radio.addEventListener('change', (event) => {
                 updateRole(event.target.value);
             });
         });
 
-        // Initialize UI on load (defaults to student)
-        updateRole('student'); 
+        updateRole('student');
 
-
-        // ===========================
-        // === WEBCAM & ENROLLMENT LOGIC ===
-        // ===========================
-
-        // Access webcam
+        // Webcam access
         navigator.mediaDevices.getUserMedia({ video: true })
             .then(stream => { video.srcObject = stream; })
-            .catch(err => { 
-                messageEl.textContent = 'Camera access denied or failed.'; 
-                messageEl.style.color = "red"; 
+            .catch(err => {
+                messageEl.textContent = 'Camera access denied or failed.';
+                messageEl.style.color = "red";
                 console.error("Camera error:", err);
             });
 
-        // Capture frame and send to backend
         captureBtn.addEventListener('click', async () => {
             const name = document.getElementById('name').value.trim();
-            
             let idValue, idKey, API_ENDPOINT, resultKey;
 
             if (currentRole === 'student') {
@@ -240,7 +233,7 @@
                 API_ENDPOINT = `${API_BASE}/lecturers/enroll`;
                 resultKey = 'lecturer_id';
             }
-            
+
             if (!name || !idValue) {
                 messageEl.textContent = `Fill all fields for ${currentRole}.`;
                 messageEl.style.color = "red";
@@ -253,7 +246,6 @@
                 return;
             }
 
-            // Draw video frame to canvas
             const canvas = document.createElement('canvas');
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
@@ -269,8 +261,7 @@
 
                 const formData = new FormData();
                 formData.append('name', name);
-                // Dynamically append the ID (matric_no or staff_id)
-                formData.append(idKey, idValue); 
+                formData.append(idKey, idValue);
                 formData.append('file', blob, 'capture.jpg');
 
                 messageEl.textContent = "Uploading...";
@@ -284,20 +275,14 @@
 
                     const result = await res.json();
 
-                    // Dynamically check for the correct ID key in the response
-                    if (res.ok && result[resultKey]) { 
-                        messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! ${currentRole} ID: **${result[resultKey]}**`;
+                    if (res.ok && result[resultKey]) {
+                        messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! ${currentRole} ID: <strong>${result[resultKey]}</strong>`;
                         messageEl.style.color = "green";
-
-                        // Clear inputs
                         document.getElementById('name').value = "";
                         matricInput.value = "";
                         staffInput.value = "";
-                    } else if (result.error || !res.ok) {
-                        messageEl.innerHTML = `<i class='bx bx-error-circle'></i> Error: ${result.detail || result.error || res.statusText}`;
-                        messageEl.style.color = "red";
                     } else {
-                        messageEl.textContent = "Unknown response from server";
+                        messageEl.innerHTML = `<i class='bx bx-error-circle'></i> Error: ${result.detail || result.error || res.statusText}`;
                         messageEl.style.color = "red";
                     }
 
@@ -309,32 +294,27 @@
             }, 'image/jpeg', 0.95);
         });
 
-        // ===========================
-        // === THEME TOGGLE LOGIC === (Keep existing theme logic)
-        // ===========================
+        // Theme toggle
         const themeToggle = document.getElementById("themeToggle");
-        if (themeToggle) {
-            themeToggle.onclick = () => {
-                const body = document.body;
-                if (body.classList.contains("light")) {
-                    body.classList.replace("light", "dark");
-                    themeToggle.classList.replace("bx-sun", "bx-moon");
-                    localStorage.setItem('theme', 'dark'); 
-                } else {
-                    body.classList.replace("dark", "light");
-                    themeToggle.classList.replace("bx-moon", "bx-sun");
-                    localStorage.setItem('theme', 'light');
-                }
-            };
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.body.classList.remove('light', 'dark');
-            document.body.classList.add(savedTheme);
-            themeToggle.classList.toggle('bx-moon', savedTheme === 'dark');
-            themeToggle.classList.toggle('bx-sun', savedTheme === 'light');
-        }
+        themeToggle.onclick = () => {
+            const body = document.body;
+            if (body.classList.contains("light")) {
+                body.classList.replace("light", "dark");
+                themeToggle.classList.replace("bx-sun", "bx-moon");
+                localStorage.setItem('theme', 'dark');
+            } else {
+                body.classList.replace("dark", "light");
+                themeToggle.classList.replace("bx-moon", "bx-sun");
+                localStorage.setItem('theme', 'light');
+            }
+        };
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.classList.remove('light', 'dark');
+        document.body.classList.add(savedTheme);
+        themeToggle.classList.toggle('bx-moon', savedTheme === 'dark');
+        themeToggle.classList.toggle('bx-sun', savedTheme === 'light');
 
     </script>
 
 </body>
-
 </html>
