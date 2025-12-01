@@ -83,7 +83,11 @@
                     </div>
                 </div>
             </div>
-
+<div id="camera-mode-toggle" style="margin-bottom: 10px; text-align: center;">
+                <button id="toggleScanModeBtn" class="secondary-btn">Switch to QR Code Scan</button>
+            </div>
+            
+            <div id="qr-reader" style="width: 100%; display: none;"></div>
             <video id="studentScanVideo" autoplay muted></video>
             <p class="feedback" id="scanStatus">Scan ready. Waiting for student...</p>
 
@@ -140,7 +144,7 @@
         <button class="backBtn" data-target="history">Back</button>
     </div>
 </section>
-
+<script src="https://unpkg.com/html5-qrcode"></script>
 <script src="../js/page.js"></script>
 </body>
 </html>

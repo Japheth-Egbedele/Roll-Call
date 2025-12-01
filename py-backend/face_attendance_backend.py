@@ -198,7 +198,10 @@ def verify_lecturer(image: dict = Body(...)):
 class StudentScan(BaseModel):
     image: str
     session_id: str
-
+class QrScan(BaseModel):
+    matric_no: str # The ID encoded in the QR code
+    session_id: str
+    audit_image: str = None # Optional base64 image for audit/snapping
 @app.post("/sessions/scan")
 async def scan_student(scan: StudentScan):
     try:
@@ -233,6 +236,52 @@ async def scan_student(scan: StudentScan):
         traceback.print_exc()
         return {"detected": False, "error": "Error during student scan"}
 
+# Paste this new endpoint after the existing /sessions/scan function:
+@app.post("/sessions/scan_qr")
+async def scan_student_qr(scan: QrScan):
+    try:
+        if not scan.matric_no:
+            return JSONResponse({"detected": False, "error": "No matriculation number provided"}, status_code=400)
+
+        # 1. Find the student using the ID from the QR code
+        student = students_col.find_one({"matric_no": scan.matric_no})
+
+        if not student:
+            return {"detected": False, "error": f"Student ID {scan.matric_no} not found"}
+
+        # 2. Log attendance
+        now = now_utc()
+        attendance_col.update_one(
+            {"session_id": ObjectId(scan.session_id), "student_id": student["_id"]},
+            # Use 'QR' as the status suffix for tracking method
+            {"$setOnInsert": {"first_seen": now, "status": "present_qr"},
+             "$set": {"last_seen": now}},
+            upsert=True
+        )
+
+        # 3. Handle optional Audit Image (Proof of Scan)
+        if scan.audit_image:
+            # You could save this image to a separate audit collection or a storage service
+            # For simplicity, we'll log its existence in the console and *can* save it to MongoDB if required.
+            
+            # --- Optional: Save audit image to MongoDB as Base64/Binary if needed ---
+            # audit_image_bytes = decode_base64_image(scan.audit_image)
+            # db.audit_logs.insert_one({
+            #     "session_id": ObjectId(scan.session_id),
+            #     "matric_no": scan.matric_no,
+            #     "timestamp": now,
+            #     "image_size_kb": len(audit_image_bytes) / 1024 
+            # })
+            # print(f"[QR Scan] Audit image received for {scan.matric_no}")
+            pass
+
+
+        print(f"[QR Scan] Logged attendance for {student['matric_no']} ({student['name']})")
+        return {"detected": True, "name": student["name"], "matric_no": student["matric_no"]}
+
+    except Exception:
+        traceback.print_exc()
+        return {"detected": False, "error": "Error during QR student scan"}
 # ----------------------
 # --- SESSION MANAGEMENT
 # ----------------------

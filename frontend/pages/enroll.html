@@ -7,7 +7,7 @@
     <title>Roll Call Demo - Unified Enrollment</title>
     <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="../style/style.css">
     <style>
         body {
             margin: 0;
@@ -163,8 +163,15 @@
         <button id="captureBtn">Capture & Enroll Student</button>
         <div class="message" id="message"></div>
         <button id="backToHomeBtn" onclick="window.location.href='index.html'">Back to Home</button>
-    </div>
+        
+        <div id="qrCodeContainer" style="display: none; margin-top: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 10px;">
+        <h4>Your Digital ID:</h4>
+        <div id="qrcode"></div>
+        <p style="font-size: 12px; margin-top: 10px; color: #555;">Save this code for attendance backup.</p>
+        </div>
 
+    </div>
+    
     <script>
         const video = document.getElementById('enrollVideo');
         const captureBtn = document.getElementById('captureBtn');
@@ -175,7 +182,27 @@
 
         const API_BASE = "http://localhost:8000";
         let currentRole = 'student';
+function generateQRCode(idValue, role) {
+    const qrContainer = document.getElementById('qrCodeContainer');
+    const qrEl = document.getElementById('qrcode');
+    
+    // Clear previous QR and ensure container is visible
+    qrEl.innerHTML = '';
+    qrContainer.style.display = 'block';
 
+    // Generate the QR code using qrcode.js
+    new QRCode(qrEl, {
+        text: idValue, // The unique ID (matric_no or staff_id)
+        width: 150,
+        height: 150,
+        colorDark : "#000000",
+        colorLight : "#ffffff",
+        correctLevel : QRCode.CorrectLevel.H
+    });
+
+    // Update the message within the QR container
+    qrContainer.querySelector('h4').textContent = `${role === 'student' ? 'Student' : 'Lecturer'} Digital ID:`;
+}
         function updateRole(role) {
             currentRole = role;
             messageEl.textContent = '';
@@ -217,7 +244,6 @@
                 messageEl.style.color = "red";
                 console.error("Camera error:", err);
             });
-
         captureBtn.addEventListener('click', async () => {
             const name = document.getElementById('name').value.trim();
             let idValue, idKey, API_ENDPOINT, resultKey;
@@ -276,22 +302,31 @@
                     const result = await res.json();
 
                     if (res.ok && result[resultKey]) {
-                        messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! ${currentRole} ID: <strong>${result[resultKey]}</strong>`;
-                        messageEl.style.color = "green";
-                        document.getElementById('name').value = "";
-                        matricInput.value = "";
-                        staffInput.value = "";
+const enrolledId = result[resultKey];
+
+                        messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! ${currentRole} ID: <strong>${enrolledId}</strong>. **Your QR Code is ready!**`;
+                        messageEl.style.color = "green";
+                        
+                        // --- CALL THE NEW FUNCTION HERE ---
+                        generateQRCode(enrolledId, currentRole);
+                        
+                        // Clear input fields
+                        document.getElementById('name').value = "";
+                        matricInput.value = "";
+                        staffInput.value = "";
                     } else {
                         messageEl.innerHTML = `<i class='bx bx-error-circle'></i> Error: ${result.detail || result.error || res.statusText}`;
-                        messageEl.style.color = "red";
+                        messageEl.style.color = "red";
+                        document.getElementById('qrCodeContainer').style.display = 'none'; // ADDED: Hide on failure
                     }
 
                 } catch (err) {
-                    console.error("Enrollment API Error:", err);
-                    messageEl.innerHTML = `<i class='bx bx-wifi-off'></i> Network Error: Cannot reach backend (${API_ENDPOINT}).`;
-                    messageEl.style.color = "red";
-                }
-            }, 'image/jpeg', 0.95);
+                   console.error("Enrollment API Error:", err);
+                    messageEl.innerHTML = `<i class='bx bx-wifi-off'></i> Network Error: Cannot reach backend (${API_ENDPOINT}).`;
+                    messageEl.style.color = "red";
+                    document.getElementById('qrCodeContainer').style.display = 'none'; // ADDED: Hide on network failure
+                }
+            }, 'image/jpeg', 0.95);
         });
 
         // Theme toggle
@@ -315,6 +350,6 @@
         themeToggle.classList.toggle('bx-sun', savedTheme === 'light');
 
     </script>
-
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
 </body>
 </html>
