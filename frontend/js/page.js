@@ -47,7 +47,8 @@ function initWebcam(videoId) {
 function stopWebcam(videoId) {
     const video = document.getElementById(videoId);
     if (video?.srcObject) {
-        video.srcObject.getTracks().forEach(track => track.stop());
+        // This is the core line that releases the camera
+        video.srcObject.getTracks().forEach(track => track.stop()); 
         video.srcObject = null;
     }
 }
@@ -181,15 +182,22 @@ function onQrScanSuccess(decodedText) {
         processQrAttendance(decodedText); 
         
         // Resume scanning after a brief delay
-        setTimeout(() => {
-            if (qrCodeScanner) qrCodeScanner.resume();
-        }, 3000); 
+setTimeout(() => {
+            if (qrCodeScanner) {
+                // Attempt to resume, handle potential error if camera is busy/closed
+                qrCodeScanner.resume().catch(err => {
+                    console.warn("Failed to resume QR scanner, probably waiting for user action:", err);
+                });
+            }
+        }, 3000); 
     }
 }
 
 // 2. API call for QR attendance (sends ID and an audit snap)
 async function processQrAttendance(idValue) {
     const currentSession = JSON.parse(localStorage.getItem('currentSession'));
+    // ✅ Apply the trim fix here:
+    const trimmedId = idValue.trim();
     if (!currentSession) return;
     
     // 1. Capture Image for Audit (Scan & Snap)
@@ -207,12 +215,12 @@ async function processQrAttendance(idValue) {
         base64Image = canvas.toDataURL('image/jpeg');
     }
     
-    if (scanStatus) scanStatus.innerHTML = `<span style="color:blue;"><i class="bx bx-loader-alt bx-spin"></i> Processing QR Code for ID: ${idValue}...</span>`;
-
+if (scanStatus) scanStatus.innerHTML = `<span style="color:blue;"><i class="bx bx-loader-alt bx-spin"></i> Processing QR Code for ID: ${trimmedId}...</span>`;
     try {
         // Calls the new backend endpoint /sessions/scan_qr
-        const data = await postJSON("http://localhost:8000/sessions/scan_qr", {
-            matric_no: idValue,
+// Use trimmedId in the API call:
+    const data = await postJSON("http://localhost:8000/sessions/scan_qr", {
+        matric_no: trimmedId,
             session_id: currentSession.session_id,
             audit_image: base64Image // Send the snapped photo for review later
         });
@@ -232,12 +240,16 @@ async function processQrAttendance(idValue) {
 // 3. Function to start the QR scanner
 function startQrScan() {
     // 1. Stop Face Scan/Webcam
-    clearInterval(studentScanInterval);
-    stopWebcam('studentScanVideo'); 
+    // FIX: Clear the interval first, then null the variable
+    if (studentScanInterval) clearInterval(studentScanInterval);
+    studentScanInterval = null;
+    
+    stopWebcam('studentScanVideo');
     
     // If scanner instance already exists, clear it before re-rendering
     if(qrCodeScanner) {
         qrCodeScanner.clear().catch(e => console.error("Error clearing QR scanner:", e));
+        qrCodeScanner = null;
     }
 
 // 2. Hide face elements, show QR elements
@@ -263,6 +275,7 @@ function startQrScan() {
          console.error("QR Scanner Initialization Error:", error);
          document.getElementById('scanStatus').innerHTML = '<span style="color:red;font-weight:bold;"><i class="bx bx-error-circle"></i> Failed to start camera for QR scan.</span>';
     });
+    // Stops working here
     document.getElementById('scanStatus').textContent = "Scanning in QR Mode...";
 }
 
@@ -272,6 +285,7 @@ function stopQrScan() {
         qrCodeScanner.clear().catch(e => console.error("Error clearing QR scanner:", e));
         qrCodeScanner = null;
     }
+    document.getElementById('qr-reader').style.display = 'none';
     document.getElementById('qr-reader').style.display = 'none';
     document.getElementById('scanStatus').textContent = "Scan ready. Waiting for student...";
 }
@@ -471,21 +485,31 @@ function showPage(id) { // Moved outside DOMContentLoaded
 document.addEventListener('DOMContentLoaded', function () {
     
     // --- TOGGLE BUTTON LISTENER (Fixed Position) ---
+// Inside the document.addEventListener('DOMContentLoaded', function () { ... });
+    
+    // --- TOGGLE BUTTON LISTENER ---
     const toggleBtn = document.getElementById('toggleScanModeBtn');
     if (toggleBtn) {
-        // Ensure the button text is correct on initial load
-        toggleBtn.textContent = currentScanMode === 'QR' ? 'Switch to Face Scan' : 'Switch to QR Code Scan';
-
+        // ... (other setup for toggleBtn)
+        
         toggleBtn.addEventListener('click', () => {
             if (currentScanMode === 'FACE') {
+                // Switching from FACE to QR Mode
                 currentScanMode = 'QR';
                 toggleBtn.textContent = 'Switch to Face Scan';
+                
+                // CRITICAL ADDITIONS: Ensure Face Scan resources are killed
+                clearInterval(studentScanInterval);
+                studentScanInterval = null;
                 stopWebcam('studentScanVideo'); 
-                startQrScan(); 
+
+                // *** CHANGE THIS LINE: Introduce a 500ms delay ***
+                setTimeout(startQrScan, 500); 
             } else {
+                // Switching from QR back to FACE Mode
                 currentScanMode = 'FACE';
                 toggleBtn.textContent = 'Switch to QR Code Scan';
-                stopQrScan(); 
+                stopQrScan();
                 startStudentScan('studentScanVideo'); 
             }
         });

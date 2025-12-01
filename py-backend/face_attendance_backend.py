@@ -243,38 +243,30 @@ async def scan_student_qr(scan: QrScan):
         if not scan.matric_no:
             return JSONResponse({"detected": False, "error": "No matriculation number provided"}, status_code=400)
 
-        # 1. Find the student using the ID from the QR code
-        student = students_col.find_one({"matric_no": scan.matric_no})
+        # 1. Standardize the ID to lower case for robust lookup
+        standardized_matric_no = scan.matric_no.lower()
+        
+        # 🎯 DIAGNOSTIC: Print the standardized ID
+        print(f"[QR Backend] Received and Standardized ID for lookup: '{standardized_matric_no}'")
+
+        # 2. Find the student using the standardized ID
+        student = students_col.find_one({"matric_no": standardized_matric_no})
 
         if not student:
-            return {"detected": False, "error": f"Student ID {scan.matric_no} not found"}
+            # Check the database for the *exact* string you are using to enroll students
+            print(f"[QR Scan Error] Standardized ID '{standardized_matric_no}' not found in MongoDB.") 
+            return {"detected": False, "error": f"Student ID {scan.matric_no} not recognized"}
 
-        # 2. Log attendance
+        # 3. Log attendance (using the found student's ID)
         now = now_utc()
         attendance_col.update_one(
             {"session_id": ObjectId(scan.session_id), "student_id": student["_id"]},
-            # Use 'QR' as the status suffix for tracking method
             {"$setOnInsert": {"first_seen": now, "status": "present_qr"},
              "$set": {"last_seen": now}},
             upsert=True
         )
-
-        # 3. Handle optional Audit Image (Proof of Scan)
-        if scan.audit_image:
-            # You could save this image to a separate audit collection or a storage service
-            # For simplicity, we'll log its existence in the console and *can* save it to MongoDB if required.
-            
-            # --- Optional: Save audit image to MongoDB as Base64/Binary if needed ---
-            # audit_image_bytes = decode_base64_image(scan.audit_image)
-            # db.audit_logs.insert_one({
-            #     "session_id": ObjectId(scan.session_id),
-            #     "matric_no": scan.matric_no,
-            #     "timestamp": now,
-            #     "image_size_kb": len(audit_image_bytes) / 1024 
-            # })
-            # print(f"[QR Scan] Audit image received for {scan.matric_no}")
-            pass
-
+        
+        # ... (Audit image and return success)
 
         print(f"[QR Scan] Logged attendance for {student['matric_no']} ({student['name']})")
         return {"detected": True, "name": student["name"], "matric_no": student["matric_no"]}
