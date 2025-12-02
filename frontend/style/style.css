@@ -49,9 +49,9 @@ body, html {
 
 /* --- THEME/COLORS WITH VARIABLES (Moved to the top in the provided CSS, re-inserted here for context) --- */
 :root {
-    --text-color: #333;
-    --main-bg: #f5f7fa;
-    --card-bg: #fff;
+    --text-color: #000000;
+    --main-bg: #FFFFFF;
+    --card-bg: #FFFFFF;
     --sidebar-bg: #eef0f4;
     --input-border: #ccc;
 }
@@ -340,3 +340,27 @@ video {
     width: 120px; /* Optional: Give it a defined width */
 }
 
+/*QR scanner to fit container*/
+
+/* Target the container for the QR scanner */
+#qr-reader {
+    width: 100% !important; /* Force it to take the full width of the camera-panel */
+    padding: 0; /* Remove any default padding that might restrict it */
+    margin: 0 auto; /* Center it just in case */
+    /* Set a specific aspect ratio or max-height if needed */
+    max-width: 450px; /* Optional: Adjust this max width to fit your design */
+}
+
+/* Ensure the video element inside is also responsive */
+#qr-reader video {
+    width: 100% !important;
+    height: auto !important;
+}
+
+/* Also check the parent element, .camera-panel, to ensure it has a fixed or max width */
+.camera-panel {
+    /* Example: Give it a defined size */
+    width: 100%; 
+    max-width: 600px; 
+    margin: 0 auto;
+}

@@ -264,7 +264,7 @@ function startQrScan() {
         "qr-reader", 
         { 
             fps: 10, 
-            qrbox: 250, 
+            qrbox: 350, 
             disableFlip: false 
         }, 
         true // verbose logging
