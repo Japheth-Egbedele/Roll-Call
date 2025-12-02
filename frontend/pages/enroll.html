@@ -244,90 +244,97 @@ function generateQRCode(idValue, role) {
                 messageEl.style.color = "red";
                 console.error("Camera error:", err);
             });
-        captureBtn.addEventListener('click', async () => {
-            const name = document.getElementById('name').value.trim();
-            let idValue, idKey, API_ENDPOINT, resultKey;
+// Replace the captureBtn.addEventListener in enroll.html with this:
 
-            if (currentRole === 'student') {
-                idValue = matricInput.value.trim();
-                idKey = 'matric_no';
-                API_ENDPOINT = `${API_BASE}/students/enroll`;
-                resultKey = 'student_id';
+captureBtn.addEventListener('click', async () => {
+    const name = document.getElementById('name').value.trim();
+    let idValue, idKey, API_ENDPOINT, resultKey, qrIdKey;
+
+    if (currentRole === 'student') {
+        idValue = matricInput.value.trim();  // ✅ Keep exact case
+        idKey = 'matric_no';
+        qrIdKey = 'matric_no';  // For extracting from response
+        API_ENDPOINT = `${API_BASE}/students/enroll`;
+        resultKey = 'student_id';
+    } else {
+        idValue = staffInput.value.trim();  // ✅ Keep exact case
+        idKey = 'staff_id';
+        qrIdKey = 'staff_id';
+        API_ENDPOINT = `${API_BASE}/lecturers/enroll`;
+        resultKey = 'lecturer_id';
+    }
+
+    if (!name || !idValue) {
+        messageEl.textContent = `Fill all fields for ${currentRole}.`;
+        messageEl.style.color = "red";
+        return;
+    }
+
+    if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
+        messageEl.textContent = "Video stream not ready. Ensure camera is active.";
+        messageEl.style.color = "red";
+        return;
+    }
+
+    const canvas = document.createElement('canvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    canvas.toBlob(async (blob) => {
+        if (!blob) {
+            messageEl.textContent = "Error capturing image data.";
+            messageEl.style.color = "red";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append('name', name);
+        formData.append(idKey, idValue);
+        formData.append('file', blob, 'capture.jpg');
+
+        messageEl.textContent = "Uploading...";
+        messageEl.style.color = "black";
+
+        try {
+            const res = await fetch(API_ENDPOINT, {
+                method: "POST",
+                body: formData
+            });
+
+            const result = await res.json();
+
+            if (res.ok && result[resultKey]) {
+                // ✅ Use the matric_no/staff_id returned by backend (preserves exact case)
+                const qrCodeValue = result[qrIdKey] || idValue;
+                
+                console.log(`[Enrollment Success] QR Code will contain: "${qrCodeValue}"`);
+                
+                messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! Enrolled as <strong>${name}</strong> (${qrCodeValue}). Your QR Code is ready!`;
+                messageEl.style.color = "green";
+                
+                // Generate QR code with EXACT matric_no/staff_id (case preserved)
+                generateQRCode(qrCodeValue, currentRole);
+                
+                // Clear input fields
+                document.getElementById('name').value = "";
+                matricInput.value = "";
+                staffInput.value = "";
             } else {
-                idValue = staffInput.value.trim();
-                idKey = 'staff_id';
-                API_ENDPOINT = `${API_BASE}/lecturers/enroll`;
-                resultKey = 'lecturer_id';
-            }
-
-            if (!name || !idValue) {
-                messageEl.textContent = `Fill all fields for ${currentRole}.`;
+                messageEl.innerHTML = `<i class='bx bx-error-circle'></i> Error: ${result.detail || result.error || res.statusText}`;
                 messageEl.style.color = "red";
-                return;
+                document.getElementById('qrCodeContainer').style.display = 'none';
             }
 
-            if (video.readyState !== 4 || video.videoWidth === 0 || video.videoHeight === 0) {
-                messageEl.textContent = "Video stream not ready. Ensure camera is active.";
-                messageEl.style.color = "red";
-                return;
-            }
-
-            const canvas = document.createElement('canvas');
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-            canvas.toBlob(async (blob) => {
-                if (!blob) {
-                    messageEl.textContent = "Error capturing image data.";
-                    messageEl.style.color = "red";
-                    return;
-                }
-
-                const formData = new FormData();
-                formData.append('name', name);
-                formData.append(idKey, idValue);
-                formData.append('file', blob, 'capture.jpg');
-
-                messageEl.textContent = "Uploading...";
-                messageEl.style.color = "black";
-
-                try {
-                    const res = await fetch(API_ENDPOINT, {
-                        method: "POST",
-                        body: formData
-                    });
-
-                    const result = await res.json();
-
-                    if (res.ok && result[resultKey]) {
-const enrolledId = result[resultKey];
-
-                        messageEl.innerHTML = `<i class='bx bx-check-circle'></i> Success! ${currentRole} ID: <strong>${enrolledId}</strong>. **Your QR Code is ready!**`;
-                        messageEl.style.color = "green";
-                        
-                        // --- CALL THE NEW FUNCTION HERE ---
-                        generateQRCode(enrolledId, currentRole);
-                        
-                        // Clear input fields
-                        document.getElementById('name').value = "";
-                        matricInput.value = "";
-                        staffInput.value = "";
-                    } else {
-                        messageEl.innerHTML = `<i class='bx bx-error-circle'></i> Error: ${result.detail || result.error || res.statusText}`;
-                        messageEl.style.color = "red";
-                        document.getElementById('qrCodeContainer').style.display = 'none'; // ADDED: Hide on failure
-                    }
-
-                } catch (err) {
-                   console.error("Enrollment API Error:", err);
-                    messageEl.innerHTML = `<i class='bx bx-wifi-off'></i> Network Error: Cannot reach backend (${API_ENDPOINT}).`;
-                    messageEl.style.color = "red";
-                    document.getElementById('qrCodeContainer').style.display = 'none'; // ADDED: Hide on network failure
-                }
-            }, 'image/jpeg', 0.95);
-        });
+        } catch (err) {
+           console.error("Enrollment API Error:", err);
+            messageEl.innerHTML = `<i class='bx bx-wifi-off'></i> Network Error: Cannot reach backend (${API_ENDPOINT}).`;
+            messageEl.style.color = "red";
+            document.getElementById('qrCodeContainer').style.display = 'none';
+        }
+    }, 'image/jpeg', 0.95);
+});
 
         // Theme toggle
         const themeToggle = document.getElementById("themeToggle");

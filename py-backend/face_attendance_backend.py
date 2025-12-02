@@ -17,14 +17,14 @@ from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from pydantic import BaseModel
 
-import cv2
-import time
-
+# ----------------------
+# --- HELPER FUNCTION
+# ----------------------
 def open_camera(index=0, max_attempts=5, wait=0.5):
     """Try to open camera with retries and CAP_DSHOW backend."""
     cap = None
     for attempt in range(max_attempts):
-        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)  # DirectShow backend
+        cap = cv2.VideoCapture(index, cv2.CAP_DSHOW)
         if cap.isOpened():
             return cap
         else:
@@ -44,6 +44,26 @@ if not MONGO_URI:
     raise RuntimeError("MONGO_URI missing in .env")
 
 # ----------------------
+# --- PYDANTIC MODELS (MUST BE BEFORE APP ROUTES!)
+# ----------------------
+class StudentScan(BaseModel):
+    image: str
+    session_id: str
+
+class QrScan(BaseModel):
+    matric_no: str
+    session_id: str
+    audit_image: str = None
+
+class SessionStart(BaseModel):
+    lecturer_id: str
+    title: str
+    code: str
+
+class StopSession(BaseModel):
+    session_id: str
+
+# ----------------------
 # --- APP INIT
 # ----------------------
 app = FastAPI(title="Face Recognition Attendance Backend")
@@ -51,7 +71,7 @@ app = FastAPI(title="Face Recognition Attendance Backend")
 # Allow frontend CORS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # Adjust for production
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -91,6 +111,13 @@ def decode_base64_image(img_str: str):
         img_str = img_str.split(",")[1]
     return base64.b64decode(img_str)
 
+def serialize_session(session):
+    """Convert ObjectId fields to strings."""
+    session["_id"] = str(session["_id"])
+    if "lecturer_id" in session and isinstance(session["lecturer_id"], ObjectId):
+        session["lecturer_id"] = str(session["lecturer_id"])
+    return session
+
 # ----------------------
 # --- STUDENT ENROLLMENT
 # ----------------------
@@ -101,6 +128,19 @@ async def enroll_student(
     file: UploadFile = File(...)
 ):
     try:
+        # Keep EXACT case as entered
+        matric_no_clean = matric_no.strip()
+        
+        # Check if student already exists (case-insensitive check for duplicates)
+        existing = students_col.find_one({
+            "matric_no": {"$regex": f"^{matric_no_clean}$", "$options": "i"}
+        })
+        if existing:
+            return JSONResponse(
+                {"error": f"Student with ID {matric_no} already enrolled"}, 
+                status_code=400
+            )
+        
         content = await file.read()
         img = face_recognition.load_image_file(io.BytesIO(content))
         face_locs = face_recognition.face_locations(img)
@@ -110,15 +150,18 @@ async def enroll_student(
         encoding = face_recognition.face_encodings(img, face_locs)[0]
         res = students_col.insert_one({
             "name": name,
-            "matric_no": matric_no,
+            "matric_no": matric_no_clean,
             "face_encoding": serialize_encoding(encoding),
             "created_at": now_utc()
         })
-        print(f"[STUDENT] Enrolled {name} ({matric_no}) ID={res.inserted_id}")
-        return {"student_id": str(res.inserted_id)}
-    except Exception:
+        print(f"[STUDENT] Enrolled {name} ({matric_no_clean}) ID={res.inserted_id}")
+        return {
+            "student_id": str(res.inserted_id), 
+            "matric_no": matric_no_clean
+        }
+    except Exception as e:
         traceback.print_exc()
-        return JSONResponse({"error": "Failed to enroll student"}, status_code=500)
+        return JSONResponse({"error": f"Failed to enroll student: {str(e)}"}, status_code=500)
 
 # ----------------------
 # --- LECTURER ENROLLMENT
@@ -130,6 +173,17 @@ async def enroll_lecturer(
     file: UploadFile = File(...)
 ):
     try:
+        staff_id_clean = staff_id.strip()
+        
+        existing = lecturers_col.find_one({
+            "staff_id": {"$regex": f"^{staff_id_clean}$", "$options": "i"}
+        })
+        if existing:
+            return JSONResponse(
+                {"error": f"Lecturer with ID {staff_id} already enrolled"}, 
+                status_code=400
+            )
+        
         content = await file.read()
         img = face_recognition.load_image_file(io.BytesIO(content))
         face_locs = face_recognition.face_locations(img)
@@ -139,15 +193,18 @@ async def enroll_lecturer(
         encoding = face_recognition.face_encodings(img, face_locs)[0]
         res = lecturers_col.insert_one({
             "name": name,
-            "staff_id": staff_id,
+            "staff_id": staff_id_clean,
             "face_encoding": serialize_encoding(encoding),
             "created_at": now_utc()
         })
-        print(f"[LECTURER] Enrolled {name} ({staff_id}) ID={res.inserted_id}")
-        return {"lecturer_id": str(res.inserted_id)}
-    except Exception:
+        print(f"[LECTURER] Enrolled {name} ({staff_id_clean}) ID={res.inserted_id}")
+        return {
+            "lecturer_id": str(res.inserted_id), 
+            "staff_id": staff_id_clean
+        }
+    except Exception as e:
         traceback.print_exc()
-        return {"error": "Failed to enroll lecturer"}
+        return {"error": f"Failed to enroll lecturer: {str(e)}"}
 
 # ----------------------
 # --- LECTURER VERIFICATION
@@ -193,22 +250,14 @@ def verify_lecturer(image: dict = Body(...)):
         return {"verified": False, "error": "Error during lecturer verification"}
 
 # ----------------------
-# --- STUDENT SCAN DURING SESSION
+# --- STUDENT FACE SCAN DURING SESSION
 # ----------------------
-class StudentScan(BaseModel):
-    image: str
-    session_id: str
-class QrScan(BaseModel):
-    matric_no: str # The ID encoded in the QR code
-    session_id: str
-    audit_image: str = None # Optional base64 image for audit/snapping
 @app.post("/sessions/scan")
 async def scan_student(scan: StudentScan):
     try:
         if not scan.image:
             return JSONResponse({"detected": False, "error": "No image provided"}, status_code=400)
 
-        # Decode base64 image
         img_bytes = decode_base64_image(scan.image)
         img_np = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
         rgb = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
@@ -236,44 +285,64 @@ async def scan_student(scan: StudentScan):
         traceback.print_exc()
         return {"detected": False, "error": "Error during student scan"}
 
-# Paste this new endpoint after the existing /sessions/scan function:
+# ----------------------
+# --- QR CODE SCAN DURING SESSION
+# ----------------------
 @app.post("/sessions/scan_qr")
 async def scan_student_qr(scan: QrScan):
     try:
         if not scan.matric_no:
-            return JSONResponse({"detected": False, "error": "No matriculation number provided"}, status_code=400)
+            return JSONResponse(
+                {"detected": False, "error": "No matriculation number provided"}, 
+                status_code=400
+            )
 
-        # 1. Standardize the ID to lower case for robust lookup
-        standardized_matric_no = scan.matric_no.lower()
+        matric_no_clean = scan.matric_no.strip()
         
-        # 🎯 DIAGNOSTIC: Print the standardized ID
-        print(f"[QR Backend] Received and Standardized ID for lookup: '{standardized_matric_no}'")
-
-        # 2. Find the student using the standardized ID
-        student = students_col.find_one({"matric_no": standardized_matric_no})
+        print(f"[QR Scan] Searching for matric_no: '{matric_no_clean}'")
+        
+        # Case-INSENSITIVE lookup
+        student = students_col.find_one({
+            "matric_no": {"$regex": f"^{matric_no_clean}$", "$options": "i"}
+        })
 
         if not student:
-            # Check the database for the *exact* string you are using to enroll students
-            print(f"[QR Scan Error] Standardized ID '{standardized_matric_no}' not found in MongoDB.") 
-            return {"detected": False, "error": f"Student ID {scan.matric_no} not recognized"}
+            all_students = list(students_col.find({}, {"matric_no": 1, "name": 1}))
+            print(f"[QR Scan Error] ID '{matric_no_clean}' not found.")
+            print(f"[QR Scan Debug] Available students in DB:")
+            for s in all_students:
+                print(f"  - {s.get('matric_no')} ({s.get('name')})")
+            
+            return JSONResponse(
+                {"detected": False, "error": f"Student ID '{scan.matric_no}' not recognized"}, 
+                status_code=404
+            )
 
-        # 3. Log attendance (using the found student's ID)
         now = now_utc()
         attendance_col.update_one(
             {"session_id": ObjectId(scan.session_id), "student_id": student["_id"]},
-            {"$setOnInsert": {"first_seen": now, "status": "present_qr"},
-             "$set": {"last_seen": now}},
+            {
+                "$setOnInsert": {"first_seen": now, "status": "present_qr"},
+                "$set": {"last_seen": now}
+            },
             upsert=True
         )
         
-        # ... (Audit image and return success)
+        print(f"[QR Scan Success] ✅ Logged attendance for {student['matric_no']} ({student['name']})")
+        return {
+            "detected": True, 
+            "name": student["name"], 
+            "matric_no": student["matric_no"]
+        }
 
-        print(f"[QR Scan] Logged attendance for {student['matric_no']} ({student['name']})")
-        return {"detected": True, "name": student["name"], "matric_no": student["matric_no"]}
-
-    except Exception:
+    except Exception as e:
         traceback.print_exc()
-        return {"detected": False, "error": "Error during QR student scan"}
+        print(f"[QR Scan Exception] ❌ {str(e)}")
+        return JSONResponse(
+            {"detected": False, "error": f"Error during QR scan: {str(e)}"}, 
+            status_code=500
+        )
+
 # ----------------------
 # --- SESSION MANAGEMENT
 # ----------------------
@@ -365,22 +434,6 @@ def _session_loop(session_id_obj):
             pass
         print(f"[SESSION {session_id}] Stopped.")
 
-# ----------------------
-# --- SESSION MODELS
-# ----------------------
-class SessionStart(BaseModel):
-    lecturer_id: str
-    title: str
-    code: str
-
-class StopSession(BaseModel):
-    session_id: str
-
-# ----------------------
-# --- SESSION ROUTES
-# ----------------------
-
-# Start a new session
 @app.post("/sessions/start")
 def start_session(session: SessionStart):
     session_doc = {
@@ -403,7 +456,6 @@ def start_session(session: SessionStart):
     print(f"[API] Session started: {session_id}")
     return {"session_id": session_id}
 
-# Stop an active session
 @app.post("/sessions/stop")
 def stop_session(data: StopSession):
     session_id = data.session_id
@@ -418,36 +470,17 @@ def stop_session(data: StopSession):
     print(f"[API] Session stopped: {session_id}")
     return {"ok": True}
 
-# List currently running sessions
 @app.get("/sessions/running")
 def list_running_sessions():
     with _running_lock:
         return list(_running_sessions.keys())
 
-# ----------------------
-# --- SESSION HISTORY HELPER
-# ----------------------
-from bson import ObjectId
-
-def serialize_session(session):
-    """Convert ObjectId fields to strings."""
-    session["_id"] = str(session["_id"])
-    if "lecturer_id" in session and isinstance(session["lecturer_id"], ObjectId):
-        session["lecturer_id"] = str(session["lecturer_id"])
-    return session
-
-# ----------------------
-# --- SESSION HISTORY
-# ----------------------
 @app.get("/sessions/history")
 async def get_all_sessions():
     sessions = list(sessions_col.find({}).sort("created_at", -1))
     sessions = [serialize_session(s) for s in sessions]
     return {"sessions": sessions}
 
-# ----------------------
-# --- SESSION DETAILS
-# ----------------------
 @app.get("/sessions/{session_id}")
 async def get_session(session_id: str):
     if session_id == "history":
@@ -474,7 +507,6 @@ async def get_session(session_id: str):
     except Exception as e:
         return {"error": str(e)}
 
-# Get attendance for a specific session
 @app.get("/sessions/{session_id}/attendance")
 def get_session_attendance(session_id: str):
     try:
