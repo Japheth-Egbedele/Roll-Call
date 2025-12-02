@@ -38,7 +38,8 @@ def open_camera(index=0, max_attempts=5, wait=0.5):
 load_dotenv()
 MONGO_URI = os.getenv("MONGO_URI")
 SERVER_CAMERA_INDEX = int(os.getenv("SERVER_CAMERA_INDEX", 0))
-FACE_MATCH_TOLERANCE = float(os.getenv("FACE_MATCH_TOLERANCE", 0.5))
+# Using 0.4 as the strict security threshold, as discussed.
+FACE_MATCH_TOLERANCE = float(os.getenv("FACE_MATCH_TOLERANCE", 0.4))
 
 if not MONGO_URI:
     raise RuntimeError("MONGO_URI missing in .env")
@@ -207,7 +208,7 @@ async def enroll_lecturer(
         return {"error": f"Failed to enroll lecturer: {str(e)}"}
 
 # ----------------------
-# --- LECTURER VERIFICATION
+# --- LECTURER VERIFICATION (FIXED: Using CV2 and Single Face Check)
 # ----------------------
 @app.post("/lecturers/verify")
 def verify_lecturer(image: dict = Body(...)):
@@ -217,11 +218,23 @@ def verify_lecturer(image: dict = Body(...)):
             return {"verified": False, "error": "No image data received"}
 
         img_bytes = decode_base64_image(img_str)
-        img = Image.open(io.BytesIO(img_bytes)).convert("RGB")
-        img_np = np.array(img)
-        face_encodings = face_recognition.face_encodings(img_np)
+        
+        # Use OpenCV for robust image decoding
+        img_np = cv2.imdecode(np.frombuffer(img_bytes, np.uint8), cv2.IMREAD_COLOR)
+        if img_np is None:
+            return {"verified": False, "error": "Could not decode image data"}
+            
+        # Convert BGR (OpenCV default) to RGB (face_recognition default)
+        rgb = cv2.cvtColor(img_np, cv2.COLOR_BGR2RGB)
+        
+        face_encodings = face_recognition.face_encodings(rgb)
+        
         if not face_encodings:
             return {"verified": False, "error": "No face detected"}
+            
+        # FIX 1: Ensure only one face is present for security
+        if len(face_encodings) > 1:
+             return {"verified": False, "error": "Multiple faces detected. Please ensure only one face is visible."}
 
         face_encoding = face_encodings[0]
         lecturers = list(lecturers_col.find({}))
@@ -232,25 +245,28 @@ def verify_lecturer(image: dict = Body(...)):
         best_match = None
         for lecturer in lecturers:
             lec_enc = np.array(lecturer["face_encoding"], dtype=np.float64)
+            # Diagnostic printout for debugging
             distance = face_recognition.face_distance([lec_enc], face_encoding)[0]
             if min_distance is None or distance < min_distance:
                 min_distance = distance
                 best_match = lecturer
 
         if min_distance is not None and min_distance <= FACE_MATCH_TOLERANCE:
+            print(f"[Lecturer Verify] ✅ SUCCESS: Best distance {min_distance:.4f} <= Tolerance {FACE_MATCH_TOLERANCE:.4f}")
             return {
                 "verified": True,
                 "lecturer_id": str(best_match["_id"]),
                 "name": best_match["name"]
             }
         else:
+            print(f"[Lecturer Verify] ❌ FAILURE: Best distance {min_distance:.4f} > Tolerance {FACE_MATCH_TOLERANCE:.4f}")
             return {"verified": False, "error": "No matching lecturer found"}
     except Exception:
         traceback.print_exc()
         return {"verified": False, "error": "Error during lecturer verification"}
 
 # ----------------------
-# --- STUDENT FACE SCAN DURING SESSION
+# --- STUDENT FACE SCAN DURING SESSION (FIXED: Indentation)
 # ----------------------
 @app.post("/sessions/scan")
 async def scan_student(scan: StudentScan):
@@ -267,6 +283,7 @@ async def scan_student(scan: StudentScan):
             return {"detected": False, "error": "No face detected"}
 
         students = list(students_col.find({}))
+        # FIX 2: Correct indentation for the loops
         for fe in face_encodings:
             for s in students:
                 s_enc = deserialize_encoding(s["face_encoding"])
@@ -311,7 +328,7 @@ async def scan_student_qr(scan: QrScan):
             print(f"[QR Scan Error] ID '{matric_no_clean}' not found.")
             print(f"[QR Scan Debug] Available students in DB:")
             for s in all_students:
-                print(f"  - {s.get('matric_no')} ({s.get('name')})")
+                print(f" - {s.get('matric_no')} ({s.get('name')})")
             
             return JSONResponse(
                 {"detected": False, "error": f"Student ID '{scan.matric_no}' not recognized"}, 
