@@ -264,7 +264,7 @@ function startQrScan() {
         "qr-reader", 
         { 
             fps: 10, 
-            qrbox: 350, 
+            qrbox: 450, 
             disableFlip: false 
         }, 
         true // verbose logging
@@ -273,7 +273,7 @@ function startQrScan() {
     // It will prompt the user to select the camera.
     qrCodeScanner.render(onQrScanSuccess, (error) => {
          console.error("QR Scanner Initialization Error:", error);
-         document.getElementById('scanStatus').innerHTML = '<span style="color:red;font-weight:bold;"><i class="bx bx-error-circle"></i> Failed to start camera for QR scan.</span>';
+         document.getElementById('scanStatus').innerHTML = '<span style="color:black;font-weight:bold;"><i class="bx bx-error-circle"></i>  Place QR code in front of the Camera.</span>';
     });
     // Stops working here
     document.getElementById('scanStatus').textContent = "Scanning in QR Mode...";

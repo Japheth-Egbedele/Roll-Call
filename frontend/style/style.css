@@ -361,6 +361,6 @@ video {
 .camera-panel {
     /* Example: Give it a defined size */
     width: 100%; 
-    max-width: 600px; 
+    max-width: 550px; 
     margin: 0 auto;
 }
