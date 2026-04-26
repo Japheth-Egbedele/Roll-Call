@@ -1,237 +1,197 @@
-# Roll Call 📋  
-_A QR Code Based Attendance System for Achievers University_
+# Roll-Call
 
-## 📖 Overview
-Roll Call is a simple web app that helps manage student attendance using **QR codes**.  
-- **Students** generate their unique QR codes with their matric number and name.  
-- **Lecturers** scan these QR codes to mark attendance during class.  
-
-The project is built with **vanilla JavaScript**, **HTML**, and **CSS**, and uses free, open-source libraries via CDN.
+> A hybrid attendance system (FaceID + QR fallback) for classroom sessions — built for fast enrollment, live scanning, and audit-friendly session history.
 
 ---
 
-## ✨ Features
-- 🎓 **Student QR Generator**: Each student generates a QR code tied to their matric number + name.  
-- 👨‍🏫 **Lecturer QR Scanner**: Lecturers scan student codes directly from their browser using the device camera.  
-- 🔗 **One Deployment**: Both student and lecturer pages are hosted together, with a landing page for easy navigation.  
-- 🌐 **Lightweight & Free**: No backend, no premium frameworks — just front-end code and free libraries.  
+## 🎯 The Problem
+
+Manual attendance is slow, error-prone, and easy to game. Even when FaceID is available, you still need a **reliable fallback** when lighting, cameras, or devices fail.
+
+---
+
+## 💡 The Solution
+
+Roll-Call is a browser-based attendance workflow with a Python FastAPI backend for **face recognition** and **QR confirmation**, plus an optional Node/Express QR-token service for session-locked QR tokens.
+
+**Key Features:**
+- **Unified enrollment (Student/Lecturer)**: capture a face image, store encoding, generate a digital ID QR for backup (`frontend/pages/enroll.html` → `POST /students/enroll`, `POST /lecturers/enroll`).
+- **Lecturer login via FaceID**: authenticate approved lecturers before they can start sessions (`frontend/pages/lecturer.html` → `POST /lecturers/authenticate`).
+- **Session-based attendance**: start a live session, scan students, end session, and persist confirmed records (`POST /attendance/start_session`, `POST /attendance/end_session/{session_id}`).
+- **Mode switching**: switch between **QR** and **Face** during an active session (`POST /attendance/switch_mode/{session_id}`).
+- **Admin panel**: approve lecturers, manage courses, and export detailed attendance history (`frontend/pages/admin.html`).
 
 ---
 
 ## 🛠️ Tech Stack
-- **Frontend**: HTML, CSS, JavaScript  
-- **QR Code Generator**: [`qrcode.js`](https://github.com/soldair/node-qrcode) via CDN  
-- **QR Code Scanner**: [`html5-qrcode`](https://github.com/mebjas/html5-qrcode) via CDN  
-- **Hosting**: Vercel
+
+**Core:**
+- **Frontend**: HTML + CSS + Vanilla JS (simple deployment, runs anywhere)
+- **Backend (Face + Attendance API)**: FastAPI + Uvicorn (Python)
+- **Database**: MongoDB (student/lecturer/course/session records)
+
+**Face Recognition & Imaging:**
+- **`face_recognition`**: face encoding + matching (primary recognition layer)
+- **OpenCV (`opencv-python`)**: installed as part of the imaging stack used by the backend (camera/image pipeline support)
+- **NumPy + Pillow**: image/array utilities used in encoding & verification
+
+**QR / Scanning:**
+- **`qrcodejs` (CDN)**: client-side QR generation (digital ID)
+- **`jsQR` (CDN)**: QR decoding in browser camera stream (lecturer panel QR mode)
+
+**Optional (Secure QR token service):**
+- Node.js + Express + Mongoose (`qr_backend/`) for session-locked QR tokens and signature verification.
 
 ---
 
-## 📂 Project Structure
-Roll-call/
-├── index.html # Landing page (choose Student or Lecturer)
-├── student-id.html # Student QR generator page
-├── lecturer-scan.html # Lecturer QR scanner page
-├── style.css # Shared styling
-├── script.js # Core JS logic
-└── README.md # Project documentation
+## 🚀 Installation
+
+### Prerequisites
+- **Python 3.10+**
+- **Node.js 18+** (only if you want to run the optional Node QR service)
+- **MongoDB** running locally or a hosted MongoDB URI
 
 ---
 
-## 🚀 How to Use
-1. Open the [Roll Call app](https://roll-call-three.vercel.app/).  
-2. On the landing page:  
-   - Click **"I am a Student"** → go to Student page.  
-   - Click **"I am a Lecturer"** → go to Lecturer page.  
-3. **Students**: Enter your matric number + name → generate your unique QR code.  
-4. **Lecturers**: Use the camera scanner to read student QR codes → attendance is logged in real-time.  
+### 1) Run the FastAPI backend (Face + Attendance API)
+
+From the repo root:
+
+```bash
+cd py-backend
+python -m venv venv
+source venv/Scripts/activate
+pip install -r requirements.txt
+```
+
+Create a `.env` in `py-backend/` (or set environment variables):
+
+```bash
+MONGO_URI=mongodb://localhost:27017
+FACE_MATCH_TOLERANCE=0.4
+```
+
+Start the API:
+
+```bash
+uvicorn face_attendance_backend:app --reload
+```
+
+The frontend expects the API at `http://localhost:8000`.
 
 ---
 
-## 🎯 Future Improvements
-- 🔒 Add a backend (Node.js, Firebase, etc.) to store attendance logs.  
-- 📊 Generate attendance reports (download as CSV/Excel).  
-- 📱 Mobile optimization for smoother use on phones.  
-- 🎨 Improve UI/UX for even cleaner presentation.  
+### 2) Run the frontend
+
+Open any of these pages directly in your browser (or serve `frontend/` with a static server):
+
+- `frontend/pages/index.html` (entry)
+- `frontend/pages/enroll.html` (student/lecturer enrollment)
+- `frontend/pages/lecturer.html` (lecturer login + sessions)
+- `frontend/pages/admin.html` (approvals + courses + history)
 
 ---
 
-## 🙌 Credits
-- Achievers University inspiration 🏫  
-- Libraries: `qrcode.js`, `html5-qrcode`  
-- Developed by Japheth Obaloluwa Egbedele
+### 3) (Optional) Run the Node QR token backend
+
+This service lives in `qr_backend/` and exposes QR token endpoints on port **5000**.
+
+```bash
+cd qr_backend
+npm install
+node app.js
+```
+
+Endpoints:
+- `POST /api/qr/generate-qr`
+- `POST /api/qr/verify-qr`
+
+---
+
+## 📖 Usage
+
+### Enrollment
+- Go to `frontend/pages/enroll.html`
+- Choose **Student** or **Lecturer**
+- Enter Name + ID (matric/staff ID), capture face, submit
+- Students receive a **digital ID QR** for QR-mode attendance fallback
+
+### Lecturer flow (session attendance)
+- Go to `frontend/pages/lecturer.html`
+- **Scan Face & Login**
+- Select course + mode (QR or Face) → **Start Session**
+- During the session:
+  - **QR mode**: scan a student’s matric number QR → backend confirms attendance
+  - **Face mode**: submit live camera frames for blind face match → backend confirms attendance
+- **End Session** to persist confirmed records
+
+### Admin flow
+- Go to `frontend/pages/admin.html`
+- Approve pending lecturers
+- Create/assign courses
+- Export attendance history
+
+---
+
+## 🏗️ How It Works (Architecture)
+
+```mermaid
+flowchart LR
+  frontend[Frontend_Browser_UI] -->|Enroll_Face_Image| fastapi[FastAPI_Face_Attendance_API]
+  frontend -->|Lecturer_Auth_Face_Image| fastapi
+  frontend -->|Start_Session| fastapi
+  frontend -->|QR_Confirm_MatricNo| fastapi
+  frontend -->|Face_Recognize_Frame| fastapi
+  fastapi -->|Store_Records| mongo[(MongoDB)]
+  fastapi -->|Broadcast_Live_Attendance| ws[WebSocket_Attendance_Channel]
+  ws --> frontend
+  frontend -. Optional_QR_Token_Service .-> nodeqr[Node_Express_QR_Service]
+  nodeqr --> mongo
+```
+
+**Core session endpoints (FastAPI):**
+- `POST /attendance/start_session?course_id=...&lecturer_id=...&mode=qr|face`
+- `POST /attendance/switch_mode/{session_id}`
+- `POST /attendance/qr_confirm/{session_id}/{matric_no}`
+- `POST /attendance/face_recognize/{session_id}` (image upload)
+- `POST /attendance/end_session/{session_id}`
+- `GET /attendance/history`
+
+**Enrollment & admin endpoints (FastAPI):**
+- `POST /students/enroll`
+- `POST /lecturers/enroll`
+- `POST /lecturers/authenticate`
+- `GET /lecturers/pending`, `POST /lecturers/approve/{staff_id}`, `GET /lecturers/all`
+- `POST /courses`, `GET /courses`
+- `GET /admin/attendance/detailed_history`
+
+---
+
+## 🚧 Challenges & Solutions
+
+### Dual-mode attendance without breaking the flow
+**Problem:** Face recognition can fail in real-world conditions; QR-only can be shared.  
+**Solution:** Session-based mode switching + QR confirmation fallback, while still keeping an auditable history in MongoDB.
+
+---
+
+## 🔮 Future Improvements (Version 2)
+
+- [ ] Add role-based auth (admin/lecturer) and lock down CORS for production
+- [ ] Replace local-only URLs with environment-based config for deploys
+- [ ] Attendance reports (CSV/Excel) per course + per session
+- [ ] Better QR security integration (tie QR confirmation to signed tokens + expiry)
+
+---
+
+## 🤝 Credits
+
+Built collaboratively by:
+- **Olowofela David** — spearheaded the Python/FastAPI face recognition backend
+- **Japheth O. Egbedele** — frontend implementation + Node.js QR work + backend support toward the end
+
+---
+
+## 📄 License
 
-
-Backup QR Attendance System – Project Briefing
-Project Overview
-
-The Backup QR Attendance System is designed as a high-integrity, independent attendance mechanism for educational institutions. Its purpose is to provide a reliable fallback when the primary facial recognition attendance system fails, while maintaining security, preventing impersonation, and ensuring proper logging of all attendance events.
-
-This system is independent of facial recognition and can be used in parallel or as a standalone attendance mechanism.
-
-Key Features
-
-One-Time, Session-Locked QR Codes
-
-Each student QR is valid only for a specific class session.
-
-Tokens expire in a short timeframe (e.g., 20–30 seconds) to prevent sharing.
-
-QR includes cryptographic signatures to prevent forgery.
-
-Student Verification
-
-Each QR is tied to a unique student ID.
-
-QR codes are generated by the backend, using a secret token per student, ensuring mathematical unforgeability.
-
-Session Management
-
-Each class/session has a unique sessionId.
-
-Lecturer manually inputs session details (course, time, etc.) before class.
-
-QR validity is bound to session duration and class timing.
-
-Secure Backend Verification
-
-Backend verifies:
-
-Student existence
-
-Session validity
-
-QR token signature
-
-QR expiry
-
-Token reuse (one-time usage)
-
-Only valid QR codes are accepted; all invalid or expired codes are rejected.
-
-Retry & Grace Mechanism
-
-Students can retry scans if initial scan fails.
-
-Small grace period allowed for late or accidental scans.
-
-All failed attempts are logged for transparency.
-
-Manual Override
-
-Admins or lecturers can manually mark attendance for students who experience genuine issues (e.g., device malfunction, network failure).
-
-Every override is logged to maintain auditability.
-
-Independent Operation
-
-System does not rely on facial recognition to function.
-
-Can be deployed as a standalone attendance system or as a backup for primary systems.
-
-Database Structure
-
-Collections/Tables:
-
-students
-
-studentId (unique)
-
-matricNumber
-
-fullName
-
-department
-
-level
-
-secretToken (private)
-
-sessions
-
-sessionId (unique)
-
-course
-
-lecturerId
-
-startTime
-
-endTime
-
-qrTokens
-
-token (one-time, random)
-
-studentId
-
-sessionId
-
-expiresAt (timestamp)
-
-used (boolean)
-
-createdAt (timestamp)
-
-attendance
-
-studentId
-
-sessionId
-
-scanTime
-
-status (on-time, late, absent)
-
-scanMethod (QR, manual override)
-
-notes (e.g., failed scan reason)
-
-Flow of Operations
-
-Session Creation
-
-Lecturer inputs session details manually.
-
-Session is stored in database with unique sessionId.
-
-QR Generation
-
-Student requests QR code via the frontend.
-
-Backend generates one-time signed token using:
-
-Student ID
-
-Session ID
-
-Random nonce
-
-Secret token
-
-QR code includes session-bound token and expiry timestamp.
-
-QR Scanning
-
-Scanner decodes QR and sends data to backend.
-
-Backend validates token, student, session, expiry, and one-time usage.
-
-If valid, attendance is logged; if invalid, scan is rejected.
-
-Retry and grace periods are allowed for genuine scan errors.
-
-Manual Override
-
-Admin/lecturer can manually mark attendance if QR scanning fails due to genuine issues.
-
-All overrides are logged for audit.
-
-Security Advantages
-
-One-Time Tokens: Prevents sharing, replay attacks, and reuse.
-
-Cryptographically Signed Tokens: Cannot be forged even if matric numbers are known.
-
-Short Expiry + Session Lock: Ensures QR is valid only for the correct time and session.
-
-Fallback System: Functions independently of facial recognition while remaining secure.
+This project is licensed under the MIT License — see [LICENSE](LICENSE).

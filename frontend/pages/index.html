@@ -1,150 +1,248 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Roll Call Demo</title>
-<link rel="stylesheet" href="../style/style.css">
-<link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Roll Call - Main</title>
+
+    <!-- External Styles -->
+    <link rel="stylesheet" href="../style/style.css">
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        /* -----------------------------------------
+           GLOBAL STYLES
+        ------------------------------------------*/
+        body {
+            margin: 0;
+            font-family: 'Poppins', sans-serif;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            background: #f5f5f5;
+            transition: background 0.5s, color 0.5s;
+        }
+
+        /* -----------------------------------------
+           HEADER
+        ------------------------------------------*/
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+        }
+
+        .header a {
+            text-decoration: none;
+            color: #fff;
+            background: #4CAF50;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .header a:hover {
+            background: #45a049;
+        }
+
+        .theme-toggle {
+            font-size: 28px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        /* -----------------------------------------
+           ANIMATION KEYFRAMES
+        ------------------------------------------*/
+
+        @keyframes bounceIn {
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideUpFadeIn {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes glitchTitle {
+            0%, 100% {
+                text-shadow:
+                    0.05em 0 0 rgba(255, 0, 0, 0.75),
+                    -0.05em -0.025em 0 rgba(0, 255, 0, 0.75),
+                    0.025em 0.05em 0 rgba(0, 0, 255, 0.75);
+            }
+            30% {
+                text-shadow:
+                    -0.05em 0 0 rgba(255, 0, 0, 0.5),
+                    0.05em 0.025em 0 rgba(0, 255, 0, 0.5),
+                    -0.025em -0.05em 0 rgba(0, 0, 255, 0.5);
+            }
+            40% {
+                text-shadow:
+                    0.05em 0 0 rgba(255, 0, 0, 0.75),
+                    -0.05em 0.05em 0 rgba(0, 255, 0, 0.75),
+                    0.025em -0.05em 0 rgba(0, 0, 255, 0.75);
+            }
+            70% {
+                text-shadow: none;
+            }
+        }
+
+        /* -----------------------------------------
+           MAIN CONTENT
+        ------------------------------------------*/
+        .main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+
+            opacity: 0;
+            transform: scale(0.9);
+            animation: bounceIn 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+            animation-delay: 0.1s;
+        }
+
+        .main h1 {
+            font-size: 56px;
+            margin-bottom: 20px;
+            color: #333;
+            position: relative;
+            display: inline-block;
+            opacity: 0;
+
+            animation:
+                glitchTitle 1.5s step-end forwards,
+                slideUpFadeIn 0.5s ease-out forwards;
+            animation-delay: 0.8s;
+        }
+
+        .main p {
+            margin-bottom: 40px;
+            font-size: 20px;
+            font-weight: 500;
+            color: #555;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFadeIn 0.5s ease-out forwards;
+            animation-delay: 1.2s;
+        }
+
+        /* -----------------------------------------
+           LOGIN BUTTON
+        ------------------------------------------*/
+        .login-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: #4CAF50;
+            color: #fff;
+            padding: 14px 26px;
+            font-size: 20px;
+            font-weight: 600;
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 8px 15px rgba(76, 175, 80, 0.3);
+
+            opacity: 0;
+            transform: translateY(20px);
+            animation: slideUpFadeIn 0.5s ease-out forwards;
+            animation-delay: 1.5s;
+        }
+
+        .login-button:hover {
+            background: #45a049;
+            box-shadow: 0 12px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        /* -----------------------------------------
+           DARK MODE
+        ------------------------------------------*/
+        .dark {
+            background: #222;
+            color: #eee;
+        }
+
+        .dark .main h1 {
+            color: #eee;
+            text-shadow:
+                0.05em 0 0 rgba(0, 255, 255, 0.75),
+                -0.05em -0.025em 0 rgba(255, 0, 255, 0.75),
+                0.025em 0.05em 0 rgba(255, 255, 0, 0.75);
+        }
+
+        .dark .header a {
+            background: #555;
+        }
+
+        .dark .theme-toggle {
+            color: #eee;
+        }
+
+        .dark .main p {
+            color: #ccc;
+        }
+
+        .dark .login-button {
+            background: #0099ff;
+            box-shadow: 0 8px 15px rgba(0, 153, 255, 0.3);
+        }
+
+        .dark .login-button:hover {
+            background: #007acc;
+        }
+    </style>
 </head>
 <body class="light">
 
-<!-- Theme Toggle -->
-<i id="themeToggle" class="theme-toggle bx bx-sun"></i>
+    <div class="header">
+        <a href="enroll.html"><i class='bx bxs-user-plus'></i> Enroll User</a>
+        <i id="themeToggle" class="theme-toggle bx bx-sun"></i>
+    </div>
 
-<!-- ================================= -->
-<!-- 1. Landing Page -->
-<!-- ================================= -->
-<section id="landing" class="page active">
-    <div class="page-content">
+    <div class="main">
         <h1>Welcome to Roll Call</h1>
-        <p>Start a session or view history.</p>
-        <button id="startBtn">Start New Session</button> 
-        <button id="historyBtn">View Past Sessions</button>
-        <a href="enroll.html" class="button-link" id="enroll-link">Enroll</a>
+        <p>Please log in to manage your sessions.</p>
+
+        <a href="lecturer.html" class="login-button">
+            <i class='bx bxs-briefcase'></i>
+            Lecturer Login
+        </a>
     </div>
-</section>
 
-<!-- ================================= -->
-<!-- 2. Lecturer Verification -->
-<!-- ================================= -->
-<section id="scan" class="page">
-    <div class="page-content">
-        <h2>Lecturer Verification</h2>
-        <p class="feedback" id="scanFeedback">Please look at the camera for verification.</p>
-        <video id="scanVideo" autoplay muted></video>
-        <canvas id="scanCanvas" style="display: none;"></canvas>
+    <!-- -----------------------------------------
+         SCRIPT – THEME TOGGLE
+    ------------------------------------------ -->
+    <script>
+        const themeToggle = document.getElementById("themeToggle");
 
-        <div id="lecturerStatus" style="min-height: 20px; margin-top: 15px;"></div>
+        // Load saved theme
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.classList.remove("light", "dark");
+        document.body.classList.add(savedTheme);
 
-        <button class="backBtn" data-target="landing">Back to Home</button>
-    </div>
-</section>
+        // Set icon based on loaded theme
+        themeToggle.classList.toggle("bx-sun", savedTheme === "light");
+        themeToggle.classList.toggle("bx-moon", savedTheme === "dark");
 
-<!-- ================================= -->
-<!-- 3. New Session Creation -->
-<!-- ================================= -->
-<section id="newSession" class="page">
-    <div class="page-content">
-        <h2>Create New Session</h2>
+        // Toggle theme
+        themeToggle.addEventListener('click', () => {
+            const nowDark = document.body.classList.contains('light');
 
-        <label>Course Title</label>
-        <input type="text" id="courseTitle" placeholder="e.g. Data Structures">
+            document.body.classList.toggle('light', !nowDark);
+            document.body.classList.toggle('dark', nowDark);
 
-        <label>Course Code</label>
-        <input type="text" id="courseCode" placeholder="e.g. CSC201">
+            themeToggle.classList.toggle("bx-sun", !nowDark);
+            themeToggle.classList.toggle("bx-moon", nowDark);
 
-        <button id="createSessionBtn">Create Session</button>
-        <button class="backBtn" data-target="landing">Cancel</button>
-    </div>
-</section>
+            localStorage.setItem('theme', nowDark ? 'dark' : 'light');
+        });
+    </script>
 
-<!-- ================================= -->
-<!-- 4. Attendance Page -->
-<!-- ================================= -->
-<section id="attendance" class="page full-width-layout">
-    <div class="attendance-main">
-        <div class="camera-panel">
-            <h2>Live Student Scan</h2>
-
-            <div id="sessionInfoDisplay">
-                <div class="info-item">
-                    <i class='bx bx-book-content'></i>
-                    <div class="info-text">
-                        <h4>Session</h4>
-                        <span id="sessionCourse">--</span>
-                    </div>
-                </div>
-                <div class="info-item">
-                    <i class='bx bx-user-circle'></i>
-                    <div class="info-text">
-                        <h4>Lecturer</h4>
-                        <span id="sessionLecturer">--</span>
-                    </div>
-                </div>
-            </div>
-<div id="camera-mode-toggle" style="margin-bottom: 10px; text-align: center;">
-                <button id="toggleScanModeBtn" class="secondary-btn">Switch to QR Code Scan</button>
-            </div>
-            
-            <div id="qr-reader" style="width: 100%; display: none;"></div>
-            <video id="studentScanVideo" autoplay muted></video>
-            <p class="feedback" id="scanStatus">Scan ready. Waiting for student...</p>
-
-            <button id="endSessionBtn">End Session & Save Log</button>             
-        </div>
-
-        <div class="log-sidebar">
-            <h3>Attendance Log (<span id="attendeeCount">0</span>)</h3>
-            <ul id="attendanceList"></ul>
-        </div>
-    </div>
-</section>
-
-<!-- ================================= -->
-<!-- 5. End Session Verification -->
-<!-- ================================= -->
-<section id="endScan" class="page">
-    <div class="page-content">
-        <h2>End Session Verification</h2>
-        <p class="feedback" id="endScanFeedback">Please look at the camera to confirm session closure.</p>
-        <video id="endScanVideo" autoplay muted></video>
-        <canvas id="endScanCanvas" style="display: none;"></canvas>
-
-        <div id="endScanStatus" style="min-height: 20px; margin-top: 15px;"></div>
-
-        <button class="backBtn" data-target="attendance">Cancel</button>
-    </div>
-</section>
-
-<!-- ================================= -->
-<!-- 6. History Page -->
-<!-- ================================= -->
-<section id="history" class="page">
-    <div class="page-content">
-        <h2>Past Sessions</h2>
-        <div id="historyList">
-            <p>Loading...</p>
-        </div>
-        <button class="backBtn" data-target="landing">Back</button>
-    </div>
-</section>
-
-<!-- ================================= -->
-<!-- 7. History Details Page -->
-<!-- ================================= -->
-<section id="historyDetails" class="page">
-    <div class="page-content">
-        <h2>Session Details</h2>
-        <div id="sessionDetailsInfo"></div>
-
-        <h3>Attendance</h3>
-        <ul id="historyAttendanceList"></ul>
-
-        <button class="backBtn" data-target="history">Back</button>
-    </div>
-</section>
-<script src="https://unpkg.com/html5-qrcode"></script>
-<script src="../js/page.js"></script>
 </body>
 </html>

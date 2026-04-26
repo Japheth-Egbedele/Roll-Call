@@ -1,0 +1,782 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lecturer Panel</title>
+    <link href='https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css' rel='stylesheet'>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            background: #f4f4f4;
+        }
+
+        body:not(.dark) {
+            background-color: var(--main-bg);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 304 304' width='304' height='304'%3E%3Cpath fill='%23e0e0e0' fill-opacity='1' d='M44.1 224a5 5 0 1 1 0 2H0v-2h44.1zm160 48a5 5 0 1 1 0 2H82v-2h122.1zm57.8-46a5 5 0 1 1 0-2H304v2h-42.1zm0 16a5 5 0 1 1 0-2H304v2h-42.1zm6.2-114a5 5 0 1 1 0 2h-86.2a5 5 0 1 1 0-2h86.2zm-256-48a5 5 0 1 1 0 2H0v-2h12.1zm185.8 34a5 5 0 1 1 0-2h86.2a5 5 0 1 1 0 2h-86.2zM258 12.1a5 5 0 1 1-2 0V0h2v12.1zm-64 208a5 5 0 1 1-2 0v-54.2a5 5 0 1 1 2 0v54.2zm48-198.2V80h62v2h-64V21.9a5 5 0 1 1 2 0zm16 16V64h46v2h-48V37.9a5 5 0 1 1 2 0zm-128 96V208h16v12.1a5 5 0 1 1-2 0V210h-16v-76.1a5 5 0 1 1 2 0zm-5.9-21.9a5 5 0 1 1 0 2H114v48H85.9a5 5 0 1 1 0-2H112v-48h12.1zm-6.2 130a5 5 0 1 1 0-2H176v-74.1a5 5 0 1 1 2 0V242h-60.1zm-16-64a5 5 0 1 1 0-2H114v48h10.1a5 5 0 1 1 0 2H112v-48h-10.1zM66 284.1a5 5 0 1 1-2 0V274H50v30h-2v-32h18v12.1zM236.1 176a5 5 0 1 1 0 2H226v94h48v32h-2v-30h-48v-98h12.1zm25.8-30a5 5 0 1 1 0-2H274v44.1a5 5 0 1 1-2 0V146h-10.1zm-64 96a5 5 0 1 1 0-2H208v-80h16v-14h-42.1a5 5 0 1 1 0-2H226v18h-16v80h-12.1zm86.2-210a5 5 0 1 1 0 2H272V0h2v32h10.1zM98 101.9V146H53.9a5 5 0 1 1 0-2H96v-42.1a5 5 0 1 1 2 0zM53.9 34a5 5 0 1 1 0-2H80V0h2v34H53.9zm60.1 3.9V66H82v64H69.9a5 5 0 1 1 0-2H80V64h32V37.9a5 5 0 1 1 2 0zM101.9 82a5 5 0 1 1 0-2H128V37.9a5 5 0 1 1 2 0V82h-28.1zm16-64a5 5 0 1 1 0-2H146v44.1a5 5 0 1 1-2 0V18h-26.1zm102.2 270a5 5 0 1 1 0 2H98v14h-2v-16h124.1zM242 149.9V160h16v34h-16v62h48v48h-2v-46h-48v-66h16v-30h-16v-12.1a5 5 0 1 1 2 0zM53.9 18a5 5 0 1 1 0-2H64V2H48V0h18v18H53.9zm112 32a5 5 0 1 1 0-2H192V0h50v2h-48v48h-28.1zm-48-48a5 5 0 0 1-9.8-2h2.07a3 3 0 1 0 5.66 0H178v34h-18V21.9a5 5 0 1 1 2 0V32h14V2h-58.1zm0 96a5 5 0 1 1 0-2H137l32-32h39V21.9a5 5 0 1 1 2 0V66h-40.17l-32 32H117.9zm28.1 90.1a5 5 0 1 1-2 0v-76.51L175.59 80H224V21.9a5 5 0 1 1 2 0V82h-49.59L146 112.41v75.69zm16 32a5 5 0 1 1-2 0v-99.51L184.59 96H300.1a5 5 0 0 1 3.9-3.9v2.07a3 3 0 0 0 0 5.66v2.07a5 5 0 0 1-3.9-3.9H185.41L162 121.41v98.69zm-144-64a5 5 0 1 1-2 0v-3.51l48-48V48h32V0h2v50H66v55.41l-48 48v2.69zM50 53.9v43.51l-48 48V208h26.1a5 5 0 1 1 0 2H0v-65.41l48-48V53.9a5 5 0 1 1 2 0zm-16 16V89.41l-34 34v-2.82l32-32V69.9a5 5 0 1 1 2 0zM12.1 32a5 5 0 1 1 0 2H9.41L0 43.41V40.6L8.59 32h3.51zm265.8 18a5 5 0 1 1 0-2h18.69l7.41-7.41v2.82L297.41 50H277.9zm-16 160a5 5 0 1 1 0-2H288v-71.41l16-16v2.82l-14 14V210h-28.1zm-208 32a5 5 0 1 1 0-2H64v-22.59L40.59 194H21.9a5 5 0 1 1 0-2H41.41L66 216.59V242H53.9zm150.2 14a5 5 0 1 1 0 2H96v-56.6L56.6 162H37.9a5 5 0 1 1 0-2h19.5L98 200.6V256h106.1zm-150.2 2a5 5 0 1 1 0-2H80v-46.59L48.59 178H21.9a5 5 0 1 1 0-2H49.41L82 208.59V258H53.9zM34 39.8v1.61L9.41 66H0v-2h8.59L32 40.59V0h2v39.8zM2 300.1a5 5 0 0 1 3.9 3.9H3.83A3 3 0 0 0 0 302.17V256h18v48h-2v-46H2v42.1zM34 241v63h-2v-62H0v-2h34v1zM17 18H0v-2h16V0h2v18h-1zm273-2h14v2h-16V0h2v16zm-32 273v15h-2v-14h-14v14h-2v-16h18v1zM0 92.1A5.02 5.02 0 0 1 6 97a5 5 0 0 1-6 4.9v-2.07a3 3 0 1 0 0-5.66V92.1zM80 272h2v32h-2v-32zm37.9 32h-2.07a3 3 0 0 0-5.66 0h-2.07a5 5 0 0 1 9.8 0zM5.9 0A5.02 5.02 0 0 1 0 5.9V3.83A3 3 0 0 0 3.83 0H5.9zm294.2 0h2.07A3 3 0 0 0 304 3.83V5.9a5 5 0 0 1-3.9-5.9zm3.9 300.1v2.07a3 3 0 0 0-1.83 1.83h-2.07a5 5 0 0 1 3.9-3.9zM97 100a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-48 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 96a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-144a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm96 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM49 36a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-32 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM33 68a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 240a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm80-176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 48a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm112 176a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm-16 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 180a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0 16a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm0-32a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16 0a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM17 84a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm32 64a3 3 0 1 0 0-6 3 3 0 0 0 0 6zm16-16a3 3 0 1 0 0-6 3 3 0 0 0 0 6z'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: repeat;
+            background-size: var(--svg-size);
+            background-attachment: fixed; /* Ensures pattern stays put when scrolling */
+        }
+
+        #loginCard,
+        #dashboard {
+            width: 600px;
+            max-width: 100%;
+            margin: 50px auto;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+            background: #fff;
+        }
+
+        h2 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            font-size: 14px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 10px;
+            background: linear-gradient(45deg, #007BFF, #6c88a8);
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        #videoLogin,
+        #videoAttendance {
+            width: 100%;
+            border-radius: 10px;
+            margin-bottom: 10px;
+        }
+
+        .panel {
+            margin-bottom: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            background: #f9f9f9;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        table th,
+        table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        table th {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        /* #qrCode removed, no longer needed */
+
+        .hidden {
+            display: none;
+        }
+
+        .status-pending {
+            color: orange;
+            font-weight: bold;
+        }
+
+        .status-confirmed {
+            color: green;
+            font-weight: bold;
+        }
+
+        .status-absent {
+            color: red;
+            font-weight: bold;
+        }
+
+        #exportBtn {
+            width: auto;
+            padding: 8px 16px;
+            margin-bottom: 10px;
+            background: #27AE60;
+            color: #fff;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="loginCard">
+        <h2>Lecturer Login (Face Scan)</h2>
+        <video id="videoLogin" autoplay playsinline></video>
+        <button id="loginBtn">Scan Face & Login</button>
+        <p id="loginMessage"></p>
+    </div>
+
+    <div id="dashboard" class="hidden">
+        <h2>Lecturer Dashboard</h2>
+
+        <div class="panel" id="profilePanel">
+            <h3>Profile</h3>
+            <p><strong>Name:</strong> <span id="lecturerName"></span></p>
+            <p><strong>Staff ID:</strong> <span id="lecturerID"></span></p>
+            <p><strong>Courses Assigned:</strong> <span id="assignedCourses"></span></p>
+        </div>
+
+        <div class="panel" id="attendancePanel">
+            <h3>Start Attendance Session</h3>
+            <div class="input-group">
+                <label for="courseSelect">Select Course:</label>
+                <select id="courseSelect"></select>
+            </div>
+
+            <div class="input-group" style="margin-top: 15px;">
+                <label>Attendance Mode:</label>
+                <div style="display:flex; justify-content:space-around; margin-top: 5px;">
+                    <label>
+                        <input type="radio" name="mode" value="qr" id="modeQr" checked>
+                        QR Scan Only
+                    </label>
+                    <label>
+                        <input type="radio" name="mode" value="face" id="modeFace">
+                        Face Scan Only
+                    </label>
+                </div>
+                    <button id="switchModeBtn" class="secondary-btn" title="Click to switch between QR and Face recognition">
+                        <i class='bx bx-rotate-right'></i> Switch to <span id="switchModeTarget">QR</span>
+                    </button>
+            </div>
+
+            <button id="startSessionBtn">Start Session</button>
+
+            <div id="attendanceLive" class="hidden">
+                <video id="videoAttendance" autoplay playsinline></video>
+                <h4 id="sessionCourseName">Live Attendance</h4>
+                <table id="attendanceTable">
+                    <thead>
+                        <tr>
+                            <th>Student Name</th>
+                            <th>Matric No</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="attendance-data-body"> 
+                        </tbody>
+                </table>
+                <button id="endSessionBtn">End Session</button>
+
+                <div class="session-controls">
+                    <div id="sessionModeDisplay">
+                        Current Mode: <span id="currentModeName">N/A</span>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" id="historyPanel">
+            <h3>Attendance History</h3>
+            <button id="exportBtn">Export History as CSV</button>
+            <table id="historyTable">
+                <thead>
+                    <tr>
+                        <th>Course Name</th>
+                        <th>Lecturer</th>
+                        <th>Last Session</th>
+                        <th>Total Present</th>
+                        <th>Session ID</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+        </div> 
+
+        <button id="logoutBtn">Logout</button>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script> 
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+<script>
+    // ------------------ CONFIG ------------------
+    const API_BASE = "http://localhost:8000";
+
+    // Global state
+    let currentLecturer = null;
+    let ws = null;
+    let currentSessionId = null;
+    let currentSessionMode = null; // 'qr' or 'face'
+    let scanInterval = null;
+
+    // ------------------ DOM ELEMENTS ------------------
+    const videoLogin = document.getElementById('videoLogin');
+    let canvasLogin = document.getElementById('canvasLogin');
+    if (!canvasLogin) {
+        canvasLogin = document.createElement('canvas');
+        canvasLogin.id = 'canvasLogin';
+        canvasLogin.style.display = 'none';
+        const loginCard = document.getElementById('loginCard'); 
+        if(loginCard) loginCard.appendChild(canvasLogin);
+    }
+    
+    const canvasAttendance = document.createElement('canvas'); 
+    canvasAttendance.id = 'canvasAttendance';
+    canvasAttendance.style.display = 'none';
+    document.body.appendChild(canvasAttendance);
+
+    const loginBtn = document.getElementById('loginBtn');
+    const loginMessage = document.getElementById('loginMessage');
+    const loginCard = document.getElementById('loginCard');
+    const dashboard = document.getElementById('dashboard');
+    const courseSelect = document.getElementById('courseSelect');
+    const startSessionBtn = document.getElementById('startSessionBtn');
+    const endSessionBtn = document.getElementById('endSessionBtn');
+    const attendanceLive = document.getElementById('attendanceLive');
+    const videoAttendance = document.getElementById('videoAttendance');
+    const sessionCourseNameEl = document.getElementById('sessionCourseName');
+    
+    // Ensure this ID matches your HTML <tbody> ID
+    const attendanceTBody = document.getElementById('attendance-data-body'); 
+    
+    const historyTableBody = document.querySelector('#historyTable tbody');
+    const logoutBtn = document.getElementById('logoutBtn');
+    const exportBtn = document.getElementById('exportBtn');
+    
+    // --- NEW MODE SWITCHING ELEMENTS ---
+    const switchModeBtn = document.getElementById('switchModeBtn');
+    const switchModeTarget = document.getElementById('switchModeTarget');
+    const currentModeName = document.getElementById('currentModeName');
+
+
+    // --- UTILITY FUNCTIONS ---
+
+    function showMessage(text, type = 'info') {
+        if (loginCard && loginCard.style.display !== 'none' && loginMessage) {
+            loginMessage.textContent = text;
+            loginMessage.style.color = type === 'error' ? 'red' : (type === 'success' ? 'green' : '#333');
+        } else {
+            console.error(`[${type.toUpperCase()}] ${text}`);
+            if (type === 'error') alert(text);
+        }
+    }
+
+    async function safeFetch(url, options = {}) {
+        try {
+            const response = await fetch(url, options);
+            const contentType = response.headers.get("content-type");
+
+            let data;
+            if (contentType && contentType.indexOf("application/json") !== -1) {
+                data = await response.json();
+            } else {
+                data = await response.text();
+            }
+
+            if (!response.ok) {
+                const errorMessage = (typeof data === 'object' && (data.error || data.detail)) ? (data.error || (data.detail && data.detail[0] ? data.detail[0].msg : 'Unknown API Error')) : (data || `HTTP Error ${response.status}`);
+                throw new Error(errorMessage);
+            }
+            return data;
+        } catch (err) {
+            console.error('SafeFetch Error:', err);
+            throw err;
+        }
+    }
+
+    function stopVideoStream(videoEl) {
+        if (videoEl && videoEl.srcObject) {
+            videoEl.srcObject.getTracks().forEach(track => track.stop());
+            videoEl.srcObject = null;
+        }
+    }
+
+    function renderAttendanceTable(attendanceList) {
+        if (!attendanceTBody) {
+             console.error("FATAL ERROR: attendanceTBody element not found. Check HTML ID 'attendance-data-body'.");
+             return;
+        }
+
+        attendanceTBody.innerHTML = '';
+        if (!attendanceList || attendanceList.length === 0) {
+            attendanceTBody.innerHTML = '<tr><td colspan="3" style="opacity:.6; text-align:center;">No students present yet.</td></tr>';
+            return;
+        }
+
+        attendanceList.forEach(record => {
+            const tr = document.createElement('tr');
+            const statusClass = record.status ? record.status.toLowerCase().replace(/\s/g, '-') : 'confirmed';
+            tr.innerHTML = `<td>${record.name}</td><td>${record.matric_no}</td>
+                            <td class="status-${statusClass}">${record.status}</td>`;
+            attendanceTBody.appendChild(tr);
+        });
+    }
+
+
+    function updateModeDisplay(mode) {
+        if (mode === 'qr') {
+            currentModeName.textContent = 'QR Scan';
+            switchModeTarget.textContent = 'Face';
+            sessionCourseNameEl.textContent = sessionCourseNameEl.textContent.split('(')[0].trim() + ' (Mode: QR SCAN)';
+        } else if (mode === 'face') {
+            currentModeName.textContent = 'Face Recognition';
+            switchModeTarget.textContent = 'QR';
+            sessionCourseNameEl.textContent = sessionCourseNameEl.textContent.split('(')[0].trim() + ' (Mode: FACE SCAN)';
+        }
+        // Optional: add visual class changes to switchModeBtn here if desired
+    }
+    
+    // --- CAMERA INITIALIZATION ---
+
+    function initLoginCamera() {
+        // ... (Login camera logic remains the same, assuming it works) ...
+        loginMessage.textContent = "Requesting camera access...";
+        loginBtn.disabled = true;
+
+        stopVideoStream(videoLogin); 
+
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(stream => {
+                videoLogin.srcObject = stream;
+                
+                const setReady = () => {
+                    videoLogin.removeEventListener('loadeddata', setReady);
+                    canvasLogin.width = videoLogin.videoWidth;
+                    canvasLogin.height = videoLogin.videoHeight;
+                    
+                    loginBtn.disabled = false; 
+                    loginMessage.textContent = "Camera ready. Please center your face and click 'Scan Face & Login'.";
+                };
+                
+                videoLogin.addEventListener('loadeddata', setReady, { once: true });
+                
+                if (videoLogin.readyState >= 2) { 
+                    setReady();
+                }
+            })
+            .catch(err => {
+                console.error("Login Camera error:", err);
+                loginMessage.textContent = `Error: Camera access failed (${err.name}). Check permissions or another app is using it.`;
+            });
+    }
+
+
+    async function initAttendanceCamera() {
+        try {
+            const constraints = { 
+                video: { 
+                    width: { ideal: 1280 }, 
+                    height: { ideal: 720 },
+                    facingMode: "environment" 
+                } 
+            };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
+            videoAttendance.srcObject = stream;
+            
+            return new Promise((resolve) => {
+                videoAttendance.onloadedmetadata = () => {
+                    canvasAttendance.width = videoAttendance.videoWidth; 
+                    canvasAttendance.height = videoAttendance.videoHeight;
+                    console.log(`Attendance Camera initialized at high resolution: ${videoAttendance.videoWidth}x${videoAttendance.videoHeight}`);
+                    resolve();
+                };
+            });
+
+        } catch (err) {
+            console.error("Attendance Camera error:", err);
+            // Fallback to a lower resolution if 1280x720 fails
+            if (err.name === "OverconstrainedError" || err.name === "NotFoundError") {
+                console.warn("High resolution failed, trying default 640x480 fallback.");
+                // Recursive call with less restrictive constraints
+                return initAttendanceCamera({
+                    video: { 
+                        width: { ideal: 640 }, 
+                        height: { ideal: 480 }, 
+                        facingMode: "user" 
+                    }
+                });
+            }
+            throw new Error(`Camera access failed: ${err.message}.`);
+        }
+    }
+
+    // --- ATTENDANCE MODE SCANNER LOGIC ---
+
+    async function processAttendanceScan(matric_no) {
+        stopScannerLoop(); 
+        
+        try {
+            if (currentSessionMode === "qr") {
+                const result = await safeFetch(`${API_BASE}/attendance/qr_confirm/${currentSessionId}/${matric_no}`, { 
+                    method: 'POST' 
+                });
+                alert(`Attendance Confirmed (QR): ${result.name}`);
+            
+            } else if (currentSessionMode === "face") {
+                console.warn("Unexpected call to processAttendanceScan in Face Mode. Ignoring.");
+                return; 
+            }
+            
+        } catch (err) {
+            alert(`Attendance Failed for ${matric_no} (${currentSessionMode} mode): ${err.message}.`);
+            
+        } finally {
+            if (currentSessionId) {
+                startScannerLoop();
+            }
+        }
+    }
+    
+    function scanForQR() {
+        if (!videoAttendance.srcObject || videoAttendance.paused || videoAttendance.ended || videoAttendance.readyState < 2) {
+             if (Math.random() < 0.05) {
+                 console.warn("Scanner blocked: Video not ready or paused."); 
+             }
+            return;
+        }
+
+        const context = canvasAttendance.getContext('2d', { willReadFrequently: true });
+        
+        context.drawImage(videoAttendance, 0, 0, canvasAttendance.width, canvasAttendance.height);
+        const imageData = context.getImageData(0, 0, canvasAttendance.width, canvasAttendance.height);
+        
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+        });
+
+        if (code) {
+            const matric_no = code.data.trim();
+            
+            if (matric_no && matric_no.length >= 6) {
+                console.log(`SUCCESS: Found student QR code with Matric No: ${matric_no}. Attempting confirmation...`);
+                // ProcessAttendanceScan handles the API call and restarting the scanner
+                processAttendanceScan(matric_no);
+            } else {
+                console.warn("WARNING: QR Code found but invalid data (not a matric no):", code.data);
+            }
+        } else {
+            if (Math.random() < 0.1) { 
+                 console.log("Scanning... QR Code not found.");
+            }
+        }
+    }
+
+    // --- Face Scan Implementation ---
+    async function scanForFace() {
+        if (currentSessionMode !== 'face') return;
+        
+        if (!videoAttendance.srcObject || videoAttendance.paused || videoAttendance.ended || videoAttendance.readyState < 2) {
+            console.warn("Face Scanner blocked: Video not ready or paused.");
+            return;
+        }
+
+        const context = canvasAttendance.getContext('2d', { willReadFrequently: true });
+        context.drawImage(videoAttendance, 0, 0, canvasAttendance.width, canvasAttendance.height);
+        
+        // Temporarily pause the scanner while processing the image
+        stopScannerLoop(); 
+
+        try {
+            const blob = await new Promise(resolve => canvasAttendance.toBlob(resolve, 'image/jpeg', 0.95));
+            const formData = new FormData();
+            formData.append('file', blob, 'face.jpg');
+
+            console.log(`Sending POST /attendance/face_recognize/${currentSessionId} for blind recognition...`);
+
+            const result = await safeFetch(`${API_BASE}/attendance/face_recognize/${currentSessionId}`, { 
+                method: 'POST', 
+                body: formData 
+            });
+            
+            if (result.status === "Confirmed") {
+                alert(`Attendance Confirmed (Face Scan): ${result.name}`);
+            } else {
+                console.log(`Face recognition returned: ${result.message}`);
+            }
+
+        } catch (err) {
+            console.error("Face Recognition Failed:", err.message);
+            
+        } finally {
+            // Resume scanning regardless of success/failure
+            if (currentSessionId && currentSessionMode === 'face') {
+                startScannerLoop(); 
+            }
+        }
+    }
+    
+    // Scanner control functions (Logic is corrected for dynamic mode switching)
+    function startScannerLoop() {
+        if (scanInterval) {
+            clearInterval(scanInterval);
+        }
+        
+        if (currentSessionMode === 'qr') {
+            scanInterval = setInterval(scanForQR, 100); 
+            console.log("QR Scanner started with 100ms interval.");
+        } else if (currentSessionMode === 'face') {
+            // Scan for face less frequently, as it's expensive
+            scanInterval = setInterval(scanForFace, 1500); // 1.5 seconds interval
+            console.log("Face Recognition Scanner started with 1500ms interval.");
+        }
+    }
+
+    function stopScannerLoop() {
+        if (scanInterval) {
+            clearInterval(scanInterval);
+            scanInterval = null;
+            console.log("Scanner stopped.");
+        }
+    }
+
+
+    // --- EVENT LISTENERS ---
+
+    // Lecturer login (Logic is correct)
+    loginBtn.addEventListener('click', async () => {
+        // ... (Login logic unchanged) ...
+        if (loginBtn.disabled) return;
+        loginBtn.disabled = true;
+        loginMessage.textContent = "Verifying...";
+
+        try {
+            const ctx = canvasLogin.getContext('2d');
+            ctx.drawImage(videoLogin, 0, 0, canvasLogin.width, canvasLogin.height);
+            const blob = await new Promise(resolve => canvasLogin.toBlob(resolve, 'image/jpeg', 0.95));
+            const formData = new FormData();
+            formData.append('file', blob, 'face.jpg');
+
+            const result = await safeFetch(`${API_BASE}/lecturers/authenticate`, { method: 'POST', body: formData });
+
+            if (result.staff_id) {
+                currentLecturer = result;
+                loginCard.classList.add('hidden');
+                dashboard.classList.remove('hidden');
+
+                document.getElementById('lecturerName').textContent = result.name;
+                document.getElementById('lecturerID').textContent = result.staff_id;
+                document.getElementById('assignedCourses').textContent = result.courses.map(c => c.name).join(', ') || 'No courses assigned.';
+
+                const courseSelect = document.getElementById('courseSelect');
+                courseSelect.innerHTML = '<option value="">--- Select Course ---</option>';
+                result.courses.forEach(course => {
+                    const opt = document.createElement('option');
+                    opt.value = course.id;
+                    opt.textContent = course.name;
+                    courseSelect.appendChild(opt);
+                });
+                
+                loginMessage.textContent = "Login successful!";
+                await fetchAttendanceSummary();
+                stopVideoStream(videoLogin); 
+            } else {
+                throw new Error(result.error || "Authentication failed. Check if approved.");
+            }
+        } catch (err) {
+            showMessage(err.message || "Login failed.", 'error');
+        } finally {
+            loginBtn.disabled = false;
+        }
+    });
+
+    // Start attendance session
+    startSessionBtn.addEventListener('click', async () => {
+        const courseId = courseSelect.value;
+        const selectedModeEl = document.querySelector('input[name="mode"]:checked');
+        
+        if (!courseId || !selectedModeEl || currentSessionId) {
+            alert("Please select a course and mode, and ensure no session is active.");
+            return;
+        }
+
+        currentSessionMode = selectedModeEl.value; 
+        startSessionBtn.disabled = true;
+
+        try {
+            // 1. Start session on backend 
+            const session = await safeFetch(`${API_BASE}/attendance/start_session?course_id=${courseId}&lecturer_id=${currentLecturer.staff_id}&mode=${currentSessionMode}`, {
+                method: 'POST'
+            });
+            
+            // 2. Update state and UI
+            currentSessionId = session.session_id;
+            attendanceLive.classList.remove('hidden');
+            courseSelect.disabled = true;
+            
+            // 3. Display session info and initial list
+            sessionCourseNameEl.textContent = `${session.course_name} (Mode: ${currentSessionMode.toUpperCase()})`; 
+            renderAttendanceTable(session.attendance_list); 
+            
+            // 🔥 NEW: Set the initial mode display
+            updateModeDisplay(currentSessionMode);
+
+            // 4. Start attendance webcam and scanner
+            await initAttendanceCamera();
+            
+            console.log("CRITICAL: Waiting 500ms for video buffer to stabilize before starting scanner...");
+            await new Promise(resolve => setTimeout(resolve, 500)); 
+            
+            startScannerLoop(); 
+
+            // 5. Establish WebSocket connection
+            const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const apiHost = API_BASE.replace('http://', '').replace('https://', '');
+            
+            ws = new WebSocket(`${wsProtocol}//${apiHost}/attendance/ws/${currentSessionId}`);
+            
+            ws.onopen = () => {
+                console.log("WebSocket connection established successfully.");
+            };
+
+            ws.onmessage = (event) => {
+                let data;
+                try {
+                    data = JSON.parse(event.data);
+                    
+                    console.log("SUCCESS: WS Data Received:", data); 
+                    
+                    renderAttendanceTable(data);
+                    
+                } catch (e) {
+                    console.error("FATAL ERROR: Failed to parse WS message data:", e, "Raw data:", event.data);
+                }
+            };
+
+            ws.onclose = () => {
+                console.log("WebSocket connection closed.");
+                if(currentSessionId) showMessage("Live attendance connection lost.", 'error'); 
+            };
+
+            ws.onerror = (err) => {
+                console.error("WebSocket error:", err);
+                showMessage("WebSocket Error. Check server console.", 'error');
+            };
+
+        } catch (err) {
+            alert("Failed to start session: " + err.message);
+        } finally {
+            startSessionBtn.disabled = false;
+        }
+    });
+    
+
+    // End session (Logic is correct)
+    document.getElementById('endSessionBtn').addEventListener('click', async () => {
+        // ... (End session logic unchanged) ...
+        if (!currentSessionId) return;
+
+        const confirmEnd = confirm("Are you sure you want to end the session? Only confirmed students will be saved.");
+        if (!confirmEnd) return;
+        
+        endSessionBtn.disabled = true;
+
+        try {
+            // 1. Stop scanner and camera
+            stopScannerLoop();
+            stopVideoStream(videoAttendance);
+
+            // 2. Call end session API
+            await safeFetch(`${API_BASE}/attendance/end_session/${currentSessionId}`, { method: 'POST' });
+            
+            // 3. Cleanup UI
+            alert("Session ended.");
+            attendanceLive.classList.add('hidden');
+            if (attendanceTBody) attendanceTBody.innerHTML = '';
+            
+            if (ws) ws.close();
+            ws = null;
+
+            currentSessionId = null;
+            currentSessionMode = null;
+            startSessionBtn.disabled = false;
+            courseSelect.disabled = false;
+            
+            // 4. Refresh history table
+            await fetchAttendanceSummary();
+        } catch (err) {
+            alert("End session failed: " + err.message);
+        } finally {
+            endSessionBtn.disabled = false;
+        }
+    });
+    
+    // --- NEW: MODE SWITCHING EVENT LISTENER ---
+    switchModeBtn.addEventListener('click', async () => {
+        if (!currentSessionId) {
+            alert("Please start a session first.");
+            return;
+        }
+        
+        // Determine the target mode
+        const targetMode = (currentSessionMode === 'qr') ? 'face' : 'qr';
+        
+        if (!confirm(`Are you sure you want to switch the capture mode to ${targetMode.toUpperCase()}? This will restart the scanner.`)) {
+            return;
+        }
+
+        switchModeBtn.disabled = true;
+        
+        try {
+            const result = await safeFetch(`${API_BASE}/attendance/switch_mode/${currentSessionId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ new_mode: targetMode })
+            });
+            
+            // 1. Update local state
+            currentSessionMode = result.new_mode;
+            
+            // 2. Stop old scanner and start new one
+            stopScannerLoop(); 
+            startScannerLoop();
+            
+            // 3. Update UI
+            updateModeDisplay(currentSessionMode);
+            
+            console.log(result.message);
+
+        } catch(err) {
+            alert("Failed to switch mode: " + err.message);
+        } finally {
+            switchModeBtn.disabled = false;
+        }
+    });
+
+    // --- INITIAL LOAD ---
+    // Placeholder function for fetching history summary (required for login success)
+    async function fetchAttendanceSummary() {
+        console.log("Fetching attendance summary...");
+        // You would typically fetch data here and populate historyTableBody
+    }
+    
+    // Initial camera setup on load
+    window.addEventListener('load', initLoginCamera);
+</script>
+</script>
+</body>
+
+</html>
