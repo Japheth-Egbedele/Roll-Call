@@ -5,6 +5,7 @@ import os
 import io
 import uuid
 import base64
+import time
 import asyncio # <--- CRITICAL IMPORT ADDED
 from fastapi import FastAPI, UploadFile, Form, WebSocket, WebSocketDisconnect, File
 from fastapi.middleware.cors import CORSMiddleware
@@ -23,6 +24,7 @@ from fastapi import HTTPException
 # ------------------ CONFIG ------------------
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017")
 FACE_MATCH_TOLERANCE = float(os.getenv("FACE_MATCH_TOLERANCE", 0.4))
+ENABLE_VERIFICATION_METRICS = os.getenv("ENABLE_VERIFICATION_METRICS", "false").lower() == "true"
 
 client = MongoClient(MONGO_URI)
 db = client['attendance_system']
@@ -52,6 +54,39 @@ active_sessions: Dict[str, Dict] = {}
 websockets: Dict[str, List[WebSocket]] = {}
 
 # ------------------ UTILS ------------------
+def log_verification_attempt(
+    endpoint: str,
+    *,
+    participant_id=None,
+    predicted_id=None,
+    ground_truth_should_match=None,
+    predicted_match=False,
+    confidence_score=None,
+    faces_detected=0,
+    processing_time_ms=0.0,
+    session_id=None,
+    lighting_condition=None,
+    notes=None,
+):
+    if not ENABLE_VERIFICATION_METRICS:
+        return
+    db.verification_attempts.insert_one({
+        "timestamp": datetime.datetime.utcnow().isoformat(),
+        "endpoint": endpoint,
+        "participant_id": participant_id,
+        "predicted_id": predicted_id,
+        "ground_truth_should_match": ground_truth_should_match,
+        "predicted_match": predicted_match,
+        "confidence_score": confidence_score,
+        "threshold": FACE_MATCH_TOLERANCE,
+        "faces_detected": faces_detected,
+        "lighting_condition": lighting_condition,
+        "processing_time_ms": processing_time_ms,
+        "session_id": session_id,
+        "notes": notes,
+    })
+
+
 def encode_face(file_bytes):
     """Reads image bytes → returns face encoding or error."""
     image = face_recognition.load_image_file(io.BytesIO(file_bytes))
@@ -66,42 +101,37 @@ def verify_face(file_bytes, known_encoding):
     image = face_recognition.load_image_file(io.BytesIO(file_bytes))
     faces = face_recognition.face_encodings(image)
     if len(faces) != 1:
-        return False, len(faces)
-    match = face_recognition.compare_faces(
-        [np.array(known_encoding)],
-        faces[0],
-        tolerance=FACE_MATCH_TOLERANCE
+        return False, len(faces), None
+    distance = float(
+        face_recognition.face_distance([np.array(known_encoding)], faces[0])[0]
     )
-    return match[0], 1
+    return distance <= FACE_MATCH_TOLERANCE, 1, distance
 
 # 🛑 NEW HELPER: Face comparison against many known faces
 def recognize_face(live_face_bytes, known_encodings):
     """
     Compares the face in the live image against a list of known encodings.
-    Returns the index of the best match or None, and the number of faces found.
+    Returns match index (or None), faces found, and minimum Euclidean distance.
     """
     image = face_recognition.load_image_file(io.BytesIO(live_face_bytes))
     live_faces = face_recognition.face_encodings(image)
     
     faces_found = len(live_faces)
     if faces_found != 1:
-        return None, faces_found
+        return None, faces_found, None
 
-    # Compare the single live face against all known faces
-    # face_recognition.compare_faces returns a list of True/False
-    matches = face_recognition.compare_faces(
+    if not known_encodings:
+        return None, 1, None
+
+    distances = face_recognition.face_distance(
         [np.array(e) for e in known_encodings],
         live_faces[0],
-        tolerance=FACE_MATCH_TOLERANCE
     )
-    
-    # Find the index of the first True match
-    try:
-        match_index = matches.index(True)
-        return match_index, 1
-    except ValueError:
-        # No match found
-        return None, 1
+    best_idx = int(np.argmin(distances))
+    min_distance = float(distances[best_idx])
+    if min_distance <= FACE_MATCH_TOLERANCE:
+        return best_idx, 1, min_distance
+    return None, 1, min_distance
     
 
 # ------------------ UTILS (Final Version) ------------------
@@ -149,21 +179,21 @@ def identify_face_and_confirm(face_image_bytes: bytes, session_id: str):
         known_encodings, student_details = load_all_known_faces()
 
         # Use the multi-face comparison function
-        match_index, faces_found = recognize_face(face_image_bytes, known_encodings)
+        match_index, faces_found, min_distance = recognize_face(face_image_bytes, known_encodings)
         
         if faces_found != 1:
-            return None, "Face Error: Found 0 or multiple faces."
+            return None, "Face Error: Found 0 or multiple faces.", min_distance, faces_found
             
         if match_index is not None:
             # We found a match! Get the student details
             matched_student = student_details[match_index]
-            return matched_student, "Confirmed"
+            return matched_student, "Confirmed", min_distance, faces_found
         else:
-            return None, "Rejected: No match found."
+            return None, "Rejected: No match found.", min_distance, faces_found
 
     except Exception as e:
         print(f"ERROR in identify_face_and_confirm: {e}")
-        return None, f"Server Error: {e}"
+        return None, f"Server Error: {e}", None, 0
         
 
 # --- WEBSOCKET HELPER (CRITICAL FOR RELIABLE BROADCAST) ---
@@ -186,13 +216,30 @@ async def broadcast_attendance(session_id, attendance_list):
 # ------------------ STUDENT ENROLLMENT ------------------
 @app.post("/students/enroll")
 async def enroll_student(name: str = Form(...), matric_no: str = Form(...), file: UploadFile = None):
-    # ... (Enrollment logic unchanged) ...
+    t0 = time.perf_counter()
     file_bytes = await file.read()
     encoding, faces_found = encode_face(file_bytes)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
 
     if faces_found == 0:
+        log_verification_attempt(
+            "/students/enroll",
+            participant_id=matric_no,
+            predicted_match=False,
+            faces_detected=0,
+            processing_time_ms=elapsed_ms,
+            notes="enroll_no_face",
+        )
         return JSONResponse({"error": "No face detected"}, status_code=400)
     if faces_found > 1:
+        log_verification_attempt(
+            "/students/enroll",
+            participant_id=matric_no,
+            predicted_match=False,
+            faces_detected=faces_found,
+            processing_time_ms=elapsed_ms,
+            notes="enroll_multiple_faces",
+        )
         return JSONResponse({"error": "Multiple faces detected"}, status_code=400)
 
     db.students.update_one(
@@ -203,6 +250,16 @@ async def enroll_student(name: str = Form(...), matric_no: str = Form(...), file
             "face_encoding": encoding
         }},
         upsert=True
+    )
+    log_verification_attempt(
+        "/students/enroll",
+        participant_id=matric_no,
+        predicted_id=matric_no,
+        ground_truth_should_match=True,
+        predicted_match=True,
+        faces_detected=1,
+        processing_time_ms=elapsed_ms,
+        notes="enroll_success",
     )
     return {"matric_no": matric_no, "name": name, "status": "enrolled"}
 
@@ -236,23 +293,44 @@ async def enroll_lecturer(name: str = Form(...), staff_id: str = Form(...), file
 # ------------------ LECTURER AUTHENTICATION ------------------
 @app.post("/lecturers/authenticate")
 async def authenticate_lecturer(file: UploadFile = None):
-    # ... (Authentication logic unchanged) ...
+    t0 = time.perf_counter()
     file_bytes = await file.read()
 
     approved_lecturers = list(db.lecturers.find({"approved": True}, {"_id": 0}))
     for lec in approved_lecturers:
-        match, faces_found = verify_face(file_bytes, lec["face_encoding"])
+        match, faces_found, distance = verify_face(file_bytes, lec["face_encoding"])
 
         if faces_found != 1:
             continue
 
         if match:
+            elapsed_ms = (time.perf_counter() - t0) * 1000
+            log_verification_attempt(
+                "/lecturers/authenticate",
+                participant_id=lec["staff_id"],
+                predicted_id=lec["staff_id"],
+                ground_truth_should_match=True,
+                predicted_match=True,
+                confidence_score=distance,
+                faces_detected=faces_found,
+                processing_time_ms=elapsed_ms,
+                notes="lecturer_login_success",
+            )
             return {
                 "staff_id": lec["staff_id"],
                 "name": lec["name"],
                 "courses": lec.get("courses", [])
             }
 
+    elapsed_ms = (time.perf_counter() - t0) * 1000
+    log_verification_attempt(
+        "/lecturers/authenticate",
+        predicted_match=False,
+        confidence_score=None,
+        faces_detected=1 if approved_lecturers else 0,
+        processing_time_ms=elapsed_ms,
+        notes="lecturer_login_failed",
+    )
     return JSONResponse({"error": "Face not recognized OR not approved"}, status_code=401)
 
 
@@ -556,6 +634,7 @@ async def qr_confirm_attendance(session_id: str, matric_no: str):
 # 🛑 NEW ENDPOINT: FACE RECOGNITION
 @app.post("/attendance/face_recognize/{session_id}")
 async def face_recognize_attendance(session_id: str, file: UploadFile = File(...)):
+    t0 = time.perf_counter()
     if session_id not in active_sessions:
         return JSONResponse({"error": "Session not active"}, status_code=400)
     
@@ -564,35 +643,49 @@ async def face_recognize_attendance(session_id: str, file: UploadFile = File(...
     if session.get("mode") != "face":
         return JSONResponse({"error": "Session is running in QR Scan mode."}, status_code=400)
 
-    # 1. Read the image file
     try:
         file_bytes = await file.read()
     except Exception as e:
         return JSONResponse({"error": f"Failed to read image file: {e}"}, status_code=400)
     
-    # 2. Identify the student from the image (heavy lifting)
-    # NOTE: You must ensure 'identify_face_and_confirm' is correctly defined elsewhere
-    matched_student, status_msg = identify_face_and_confirm(file_bytes, session_id) 
+    matched_student, status_msg, min_distance, faces_found = identify_face_and_confirm(file_bytes, session_id)
+    elapsed_ms = (time.perf_counter() - t0) * 1000
 
     if not matched_student:
-        # Rejects the image if no face or no match found
+        log_verification_attempt(
+            "/attendance/face_recognize",
+            predicted_match=False,
+            confidence_score=min_distance,
+            faces_detected=faces_found,
+            processing_time_ms=elapsed_ms,
+            session_id=session_id,
+            notes=status_msg,
+        )
         print(f"❌ BLIND SCAN FAILED: {status_msg}")
         return {"status": "Rejected", "message": status_msg}
 
-    # Student was matched successfully
     matric_no = matched_student["matric_no"]
     student_name = matched_student["name"]
     
-    # 3. Check if already confirmed
     record = next((r for r in session["attendance"] if r["matric_no"] == matric_no), None)
     
     if record and record["status"] == "Confirmed":
-        # Silent success if already confirmed
+        log_verification_attempt(
+            "/attendance/face_recognize",
+            participant_id=matric_no,
+            predicted_id=matric_no,
+            ground_truth_should_match=True,
+            predicted_match=True,
+            confidence_score=min_distance,
+            faces_detected=faces_found,
+            processing_time_ms=elapsed_ms,
+            session_id=session_id,
+            notes="already_confirmed",
+        )
         await broadcast_attendance(session_id, session["attendance"])
         await asyncio.sleep(0.01) 
         return {"status": "Confirmed", "name": student_name, "message": "Attendance already confirmed."}
     
-    # 4. Confirm attendance and broadcast
     if status_msg == "Confirmed":
         new_record = {
             "matric_no": matric_no,
@@ -601,6 +694,18 @@ async def face_recognize_attendance(session_id: str, file: UploadFile = File(...
         }
         session["attendance"].append(new_record)
         
+        log_verification_attempt(
+            "/attendance/face_recognize",
+            participant_id=matric_no,
+            predicted_id=matric_no,
+            predicted_match=True,
+            confidence_score=min_distance,
+            faces_detected=faces_found,
+            processing_time_ms=elapsed_ms,
+            session_id=session_id,
+            notes="confirmed",
+        )
+
         print(f"✅ BLIND SCAN CONFIRMED: Student {student_name} ({matric_no}) added to session {session_id[:8]}...")
 
         await broadcast_attendance(session_id, session["attendance"])
@@ -608,7 +713,6 @@ async def face_recognize_attendance(session_id: str, file: UploadFile = File(...
         
         return {"status": "Confirmed", "name": student_name, "message": "Attendance confirmed via blind face scan."}
     else:
-        # Should be unreachable if matched_student is not None, but included for safety
         print(f"❌ BLIND SCAN FAILED: Verification failed for {student_name}. Status: {status_msg}")
         return {"status": "Rejected", "message": status_msg}
 

@@ -1,0 +1,44 @@
+ROLL-CALL RESEARCH SESSION — TESTER BRIEF
+==========================================
+
+Thank you for helping with our attendance-system study. This takes about 3–4 minutes.
+
+WHAT WE'RE TESTING
+------------------
+A face-scan attendance system (like phone Face ID) for classrooms. Your participation helps us measure accuracy and speed.
+
+WHAT HAPPENS TO YOUR DATA
+-------------------------
+1. LIVE SCAN (during the session)
+   - Your face photo is sent to our server for enrollment + verification.
+   - We record how long the server takes to process each scan (milliseconds).
+   - Data is stored in a secure MongoDB database for research only.
+
+2. SAVED IMAGES (on the research laptop)
+   - We save ~5 photos of you (straight on, left, right, closer, farther).
+   - Used OFFLINE after the session to test recognition under different poses/lighting.
+   - NOT posted publicly. Used only for accuracy statistics in our paper.
+
+3. WHAT WE DO NOT DO
+   - We do not sell your data.
+   - We do not use your photos for training commercial AI.
+   - We do not share identifiable images outside the research team.
+
+You may request deletion of your data after the project.
+
+WHAT YOU DO (3–4 MINUTES)
+-------------------------
+1. Sit in front of the laptop camera.
+2. Follow on-screen icons (arrows for left/right, etc.).
+3. When you see "1 face OK — press SPACE", press the SPACE bar.
+4. Repeat for 5 quick poses. Done.
+
+No account needed. You'll be assigned an ID like P02, P03, etc.
+
+REQUIREMENTS
+------------
+- Remove glasses/hats if possible (or keep consistent across poses).
+- Good lighting on your face.
+- One person at a time.
+
+QUESTIONS? Contact Japheth before starting.

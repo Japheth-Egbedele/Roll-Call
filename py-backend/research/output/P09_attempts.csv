@@ -1,0 +1,6 @@
+timestamp,endpoint,participant_id,predicted_id,ground_truth_should_match,predicted_match,confidence_score,threshold,faces_detected,lighting_condition,processing_time_ms,session_id,notes
+2026-07-02T16:17:39.789536+00:00,offline_benchmark,P09,P09,True,True,0.0,0.4,1,,1163.7597000226378,,probe=P09_center.jpg
+2026-07-02T16:17:40.781914+00:00,offline_benchmark,P09,P09,True,True,0.3287393263033042,0.4,1,,992.0572999399155,,probe=P09_left.jpg
+2026-07-02T16:17:42.028547+00:00,offline_benchmark,P09,P09,True,True,0.3846330494474305,0.4,1,,1245.9663999034092,,probe=P09_right.jpg
+2026-07-02T16:17:43.347022+00:00,offline_benchmark,P09,P09,True,True,0.2550112177754557,0.4,1,,1317.831499967724,,probe=P09_close.jpg
+2026-07-02T16:17:44.483012+00:00,offline_benchmark,P09,P09,True,True,0.29073924505682386,0.4,1,,1135.986499954015,,probe=P09_far.jpg
